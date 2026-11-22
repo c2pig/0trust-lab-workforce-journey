@@ -15,7 +15,7 @@ module "cloudflare_pages_lab" {
   cloudflare_zone_id    = var.cloudflare_zone_id
   state_kv_namespace_id = var.state_kv_namespace_id
   pages_project_name    = "0trust-lab-workforce-journey"
-  subdomain_prefix      = "workforce-journey.lab"
+  subdomain_prefix      = "lab-workforce-journey"
 
   plain_env_vars = merge(
     {
