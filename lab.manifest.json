@@ -5,7 +5,7 @@
   "description": "Test SCIM 2.0 Joiner/SoD rules, mint a 15-minute JIT token, and prove instant Universal Logout (CAEP) revocation.",
   "repo": "c2pig/0trust-lab-workforce-journey",
   "routePath": "/workforce-journey",
-  "standaloneUrl": "https://workforce-journey.lab.0trust.dev",
+  "standaloneUrl": "https://lab.0trust.dev/workforce-journey",
   "localDevPort": 5174,
   "archetype": "A",
   "seats": [

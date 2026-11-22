@@ -42,3 +42,7 @@
 ### 4. Infrastructure (`infra/terraform/`)
 - Provisions the Cloudflare Pages project (`0trust-lab-workforce-journey`) and `STATE_KV` binding via `managed-infrastructure//modules/cloudflare-pages-lab` with `enable_custom_domain = false` (served behind `0trust-lab-router` at `https://lab.0trust.dev/workforce-journey`).
 - Provisions the Microsoft Entra External ID (CIAM) app registration and 15-minute JIT privileged security group via `managed-infrastructure//modules/entra-external-ciam`.
+
+### 4. Automated Hub Sync & Shell Parity
+- **Hub Dispatch (`.github/workflows/sync-to-hub.yml`)**: Fires a `repository_dispatch` (`event_type: lab_contract_updated`) to `c2pig/0trust.dev` whenever `lab.manifest.json` or `docs/diagrams/*.svg` changes on `main`.
+- **Shared Shell (`@0trust/lab-shell`)**: `RoleSwitcherBar.tsx`, `XRayTelemetryDrawer.tsx`, `src/shell/index.ts`, and `src/index.css` are kept in parity with `c2pig/0trust.dev` via `scripts/sync-lab-shell.mjs`.
