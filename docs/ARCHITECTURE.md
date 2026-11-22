@@ -1,6 +1,6 @@
 # Workforce Identity Lifecycle (`0trust-lab-workforce-journey`) — Local Architecture
 
-> **Role in the 0trust.dev Ecosystem**: Standalone **Model 1** micro-lab powering **Lab 1 (`/workforce-journey`)** at [`https://workforce-journey.lab.0trust.dev`](https://workforce-journey.lab.0trust.dev) (local dev: `http://localhost:5174`).
+> **Role in the 0trust.dev Ecosystem**: Standalone **Model 1** micro-lab powering **Lab 1 (`/workforce-journey`)** at [`https://lab.0trust.dev/workforce-journey`](https://lab.0trust.dev/workforce-journey) via `0trust-lab-router` (local dev: `http://localhost:5174`).
 > **Global Architecture Reference**: [`c2pig/0trust.dev/docs/ARCHITECTURE.md`](https://github.com/c2pig/0trust.dev/blob/main/docs/ARCHITECTURE.md)
 
 ## Architecture Diagrams
@@ -40,5 +40,5 @@
 - `lab1:revoked:<jti>` — CAEP Universal Logout revocation tombstones
 
 ### 4. Infrastructure (`infra/terraform/`)
-- Provisions the Cloudflare Pages project (`0trust-lab-workforce-journey`), custom domain (`workforce-journey.lab.0trust.dev`), and `STATE_KV` binding via `managed-infrastructure//modules/cloudflare-pages-lab`.
+- Provisions the Cloudflare Pages project (`0trust-lab-workforce-journey`) and `STATE_KV` binding via `managed-infrastructure//modules/cloudflare-pages-lab` with `enable_custom_domain = false` (served behind `0trust-lab-router` at `https://lab.0trust.dev/workforce-journey`).
 - Provisions the Microsoft Entra External ID (CIAM) app registration and 15-minute JIT privileged security group via `managed-infrastructure//modules/entra-external-ciam`.
