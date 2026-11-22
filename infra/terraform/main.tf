@@ -1,4 +1,7 @@
+provider "cloudflare" {}
+
 module "entra_external_ciam" {
+  count  = var.enable_entra_ciam ? 1 : 0
   source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/entra-external-ciam?ref=main"
 
   tenant_id        = var.entra_ext_tenant_id
@@ -14,18 +17,26 @@ module "cloudflare_pages_lab" {
   pages_project_name    = "0trust-lab-workforce-journey"
   subdomain_prefix      = "workforce-journey.lab"
 
-  plain_env_vars = {
-    ENVIRONMENT         = var.environment
-    ENTRA_EXT_TENANT_ID = module.entra_external_ciam.entra_ext_tenant_id
-    ENTRA_EXT_CLIENT_ID = module.entra_external_ciam.entra_ext_client_id
-    ENTRA_EXT_AUTHORITY = module.entra_external_ciam.entra_ext_authority
-    PRIVILEGED_GROUP_ID = module.entra_external_ciam.privileged_group_id
-    PAM_API_URL         = var.pam_api_url
-  }
+  plain_env_vars = merge(
+    {
+      ENVIRONMENT = var.environment
+      PAM_API_URL = var.pam_api_url
+    },
+    var.enable_entra_ciam ? {
+      ENTRA_EXT_TENANT_ID = module.entra_external_ciam[0].entra_ext_tenant_id
+      ENTRA_EXT_CLIENT_ID = module.entra_external_ciam[0].entra_ext_client_id
+      ENTRA_EXT_AUTHORITY = module.entra_external_ciam[0].entra_ext_authority
+      PRIVILEGED_GROUP_ID = module.entra_external_ciam[0].privileged_group_id
+    } : {}
+  )
 
-  secret_env_vars = {
-    ENTRA_EXT_CLIENT_SECRET = module.entra_external_ciam.entra_ext_client_secret
-    PAM_API_TOKEN           = var.pam_api_token
-    LAB1_JWT_SECRET         = var.lab1_jwt_secret
-  }
+  secret_env_vars = merge(
+    {
+      PAM_API_TOKEN   = var.pam_api_token
+      LAB1_JWT_SECRET = var.lab1_jwt_secret
+    },
+    var.enable_entra_ciam ? {
+      ENTRA_EXT_CLIENT_SECRET = module.entra_external_ciam[0].entra_ext_client_secret
+    } : {}
+  )
 }

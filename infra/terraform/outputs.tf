@@ -15,10 +15,10 @@ output "lab_url" {
 
 output "entra_ext_client_id" {
   description = "Provisioned Entra External ID App Registration Client ID."
-  value       = module.entra_external_ciam.entra_ext_client_id
+  value       = var.enable_entra_ciam ? module.entra_external_ciam[0].entra_ext_client_id : null
 }
 
 output "privileged_group_id" {
   description = "Provisioned Entra External ID 15-minute JIT privileged group object ID."
-  value       = module.entra_external_ciam.privileged_group_id
+  value       = var.enable_entra_ciam ? module.entra_external_ciam[0].privileged_group_id : null
 }

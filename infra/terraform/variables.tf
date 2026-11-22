@@ -19,13 +19,21 @@ variable "environment" {
   description = "Deployment environment label bound to ENVIRONMENT."
 }
 
+variable "enable_entra_ciam" {
+  type        = bool
+  default     = false
+  description = "Whether to provision a dedicated Entra External ID CIAM app via managed-infrastructure."
+}
+
 variable "entra_ext_tenant_id" {
   type        = string
+  default     = ""
   description = "Microsoft Entra External ID (CIAM) Tenant ID (GUID)."
 }
 
 variable "entra_ext_tenant_subdomain" {
   type        = string
+  default     = ""
   description = "Microsoft Entra External ID (CIAM) tenant subdomain."
 }
 
