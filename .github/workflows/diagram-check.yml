@@ -1,0 +1,39 @@
+name: Architecture Diagram Sync Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  diagram-sync-check:
+    name: Verify Architecture Diagrams Updated
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.pull_request.labels.*.name, 'skip-diagram-check')"
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if code or infra changed without diagram update
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          CODE_OR_INFRA_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^(src/|functions/|infra/)' || true)
+          DIAGRAM_UPDATED=$(echo "$CHANGED_FILES" | grep -E '^(docs/ARCHITECTURE\.md|docs/diagrams/.*\.svg|README\.md)$' || true)
+
+          if [ -n "$CODE_OR_INFRA_CHANGED" ] && [ -z "$DIAGRAM_UPDATED" ]; then
+            echo "::error::Code or infrastructure files changed, but neither docs/ARCHITECTURE.md nor docs/diagrams/*.svg was updated. Please update the architecture docs/diagrams (or add the 'skip-diagram-check' label for trivial styling-only edits)."
+            exit 1
+          fi
+
+          echo "Architecture diagram sync check passed."

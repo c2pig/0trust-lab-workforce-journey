@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif">
+  <defs>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569" />
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+    </marker>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="780" fill="#f8fafc" />
+
+  <!-- Title Header -->
+  <text x="40" y="42" fill="#0f172a" font-size="20" font-weight="700">Lab 1 Architecture Blueprint: Workforce Identity Lifecycle (Top-Down)</text>
+  <text x="40" y="64" fill="#64748b" font-size="13">Top = 3-Seat Empathic Role-Play (/workforce-journey)  ·  Middle = Platform &amp; IdP Capability  ·  Bottom = Shared Observability Layer</text>
+
+  <!-- ====================================================================== -->
+  <!-- LAYER 1 (TOP): EXPERIENCE LAYER -->
+  <!-- ====================================================================== -->
+  <rect x="40" y="86" width="1120" height="178" rx="12" fill="#ffffff" stroke="#10b981" stroke-width="1.5" />
+  <rect x="60" y="102" width="415" height="24" rx="5" fill="#ecfdf5" />
+  <text x="72" y="118" fill="#047857" font-size="11.5" font-weight="700" letter-spacing="0.5">TOP · EXPERIENCE LAYER (ARCHETYPE A · 3-SEAT ROLE-PLAY)</text>
+  <rect x="810" y="102" width="330" height="24" rx="5" fill="#f1f5f9" />
+  <text x="975" y="118" fill="#334155" font-size="10.5" font-weight="600" font-family="monospace" text-anchor="middle">RoleSwitcherBar.tsx · Sandbox | Entra</text>
+
+  <!-- E1 -->
+  <rect x="60" y="140" width="316" height="104" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <rect x="74" y="152" width="58" height="20" rx="4" fill="#dbeafe" />
+  <text x="103" y="166" fill="#1d4ed8" font-size="10.5" font-weight="700" text-anchor="middle">SEAT 1</text>
+  <text x="142" y="166" fill="#0f172a" font-size="13.5" font-weight="700">Maya Lin · Finance Ops</text>
+  <text x="74" y="190" fill="#475569" font-size="12">FinCore Treasury ERP &amp; Access Hub:</text>
+  <text x="74" y="208" fill="#475569" font-size="12">Hits HTTP 403, tests SoD/ZSP traps,</text>
+  <text x="74" y="226" fill="#059669" font-size="12" font-weight="600">submits 15m JIT request (PENDING).</text>
+
+  <!-- Horizontal Arrow E1 -> E2 -->
+  <line x1="376" y1="192" x2="438" y2="192" stroke="#059669" stroke-width="2" marker-end="url(#arrow-emerald)" />
+  <text x="407" y="182" fill="#047857" font-size="10" font-weight="700" text-anchor="middle">#REQ</text>
+  <text x="407" y="209" fill="#047857" font-size="10" font-weight="700" text-anchor="middle">Pending</text>
+
+  <!-- E2 -->
+  <rect x="442" y="140" width="316" height="104" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <rect x="456" y="152" width="58" height="20" rx="4" fill="#dbeafe" />
+  <text x="485" y="166" fill="#1d4ed8" font-size="10.5" font-weight="700" text-anchor="middle">SEAT 2</text>
+  <text x="524" y="166" fill="#0f172a" font-size="13.5" font-weight="700">Marcus Chen · Finance Mgr</text>
+  <text x="456" y="190" fill="#475569" font-size="12">AccessGuard Approval Inbox:</text>
+  <text x="456" y="208" fill="#475569" font-size="12">Blocks Grant Permanent (403 ZSP),</text>
+  <text x="456" y="226" fill="#059669" font-size="12" font-weight="600">approves &amp; mints 15m jit_jwt (+900s).</text>
+
+  <!-- Horizontal Arrow E2 -> E3 -->
+  <line x1="758" y1="192" x2="820" y2="192" stroke="#059669" stroke-width="2" marker-end="url(#arrow-emerald)" />
+  <text x="789" y="182" fill="#047857" font-size="10" font-weight="700" text-anchor="middle">15m</text>
+  <text x="789" y="209" fill="#047857" font-size="10" font-weight="700" text-anchor="middle">jit_jwt</text>
+
+  <!-- E3 -->
+  <rect x="824" y="140" width="316" height="104" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <rect x="838" y="152" width="58" height="20" rx="4" fill="#dbeafe" />
+  <text x="867" y="166" fill="#1d4ed8" font-size="10.5" font-weight="700" text-anchor="middle">SEAT 3</text>
+  <text x="906" y="166" fill="#0f172a" font-size="13.5" font-weight="700">Priya Nair · SecOps Admin</text>
+  <text x="838" y="190" fill="#475569" font-size="12">Maya exports Q4 Ledger (200), then</text>
+  <text x="838" y="208" fill="#475569" font-size="12">ALERT-9914 triggers CAEP logout;</text>
+  <text x="838" y="226" fill="#dc2626" font-size="12" font-weight="600">Maya mid-flight → 401 Revoked.</text>
+
+  <!-- Vertical Arrows: Experience -> Platform -->
+  <line x1="218" y1="264" x2="218" y2="322" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" />
+  <rect x="82" y="278" width="272" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" />
+  <text x="218" y="293" fill="#1e40af" font-size="10" font-weight="600" font-family="monospace" text-anchor="middle">POST /login-provision &amp; /jit-submit</text>
+
+  <line x1="600" y1="264" x2="600" y2="322" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" />
+  <rect x="464" y="278" width="272" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" />
+  <text x="600" y="293" fill="#1e40af" font-size="10" font-weight="600" font-family="monospace" text-anchor="middle">POST /jit-decision (approve | deny)</text>
+
+  <line x1="982" y1="264" x2="982" y2="322" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" />
+  <rect x="854" y="278" width="256" height="22" rx="4" fill="#eff6ff" stroke="#bfdbfe" />
+  <text x="982" y="293" fill="#1e40af" font-size="10" font-weight="600" font-family="monospace" text-anchor="middle">POST /protected-call &amp; /logout</text>
+
+  <!-- ====================================================================== -->
+  <!-- LAYER 2 (MIDDLE): PLATFORM & IDP LAYER -->
+  <!-- ====================================================================== -->
+  <rect x="40" y="326" width="1120" height="232" rx="12" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" />
+  <rect x="60" y="342" width="435" height="24" rx="5" fill="#eff6ff" />
+  <text x="72" y="358" fill="#1d4ed8" font-size="11.5" font-weight="700" letter-spacing="0.5">MIDDLE · PLATFORM CAPABILITY LAYER (CLOUDFLARE PAGES FUNCTIONS)</text>
+
+  <!-- P1 -->
+  <rect x="60" y="378" width="316" height="84" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="76" y="402" fill="#0f172a" font-size="13.5" font-weight="700">Session Auth, SoD &amp; JIT Queue</text>
+  <text x="76" y="424" fill="#475569" font-size="12">Enforces SOD-FIN-001 (403) &amp; ZSP</text>
+  <text x="76" y="442" fill="#475569" font-size="12">(&lt;=900s); queues PENDING in KV.</text>
+
+  <!-- P2 -->
+  <rect x="442" y="378" width="316" height="84" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="458" y="402" fill="#0f172a" font-size="13.5" font-weight="700">2-Step JIT Approval Authority</text>
+  <text x="458" y="424" fill="#475569" font-size="12">Blocks grant_permanent (403 ZSP);</text>
+  <text x="458" y="442" fill="#475569" font-size="12">on approve mints 15m jit_jwt (+900s).</text>
+
+  <!-- P3 -->
+  <rect x="824" y="378" width="316" height="84" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="840" y="402" fill="#0f172a" font-size="13.5" font-weight="700">Protected ERP &amp; CAEP Logout</text>
+  <text x="840" y="424" fill="#475569" font-size="12">Checks scope/expiry &amp; KV revocation;</text>
+  <text x="840" y="442" fill="#475569" font-size="12">CAEP revoke → 401 Revoked.</text>
+
+  <!-- Dotted connectors down to IdP Adapter -->
+  <line x1="218" y1="462" x2="218" y2="486" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-slate)" />
+  <line x1="600" y1="462" x2="600" y2="486" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-slate)" />
+  <line x1="982" y1="462" x2="982" y2="486" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-slate)" />
+
+  <!-- IdP Adapter Bar -->
+  <rect x="60" y="490" width="1080" height="52" rx="8" fill="#0f172a" />
+  <text x="80" y="514" fill="#ffffff" font-size="13" font-weight="700">Pluggable IdP Adapter (IdpAdapter)</text>
+  <text x="80" y="532" fill="#94a3b8" font-size="11.5">Default: $0/mo Edge WebCrypto + STATE_KV (lab1:dir, lab1:jit-req, lab1:revoked)  |  Live: Entra External ID + iam-demo pam-api</text>
+  <rect x="975" y="502" width="146" height="28" rx="5" fill="#10b981" />
+  <text x="1048" y="520" fill="#03140d" font-size="11.5" font-weight="700" text-anchor="middle">ENTRA CIAM READY</text>
+
+  <!-- Vertical Arrows: Platform -> Observability -->
+  <line x1="600" y1="558" x2="600" y2="604" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-amber)" />
+  <rect x="448" y="568" width="304" height="22" rx="4" fill="#fef3c7" stroke="#fde68a" />
+  <text x="600" y="583" fill="#92400e" font-size="10.5" font-weight="700" text-anchor="middle">Every /api/* call intercepted automatically</text>
+
+  <!-- ====================================================================== -->
+  <!-- LAYER 3 (BOTTOM): SHARED OBSERVABILITY LAYER -->
+  <!-- ====================================================================== -->
+  <rect x="40" y="608" width="1120" height="142" rx="12" fill="#ffffff" stroke="#f59e0b" stroke-width="1.5" />
+  <rect x="60" y="624" width="470" height="24" rx="5" fill="#fef3c7" />
+  <text x="72" y="640" fill="#92400e" font-size="11.5" font-weight="700" letter-spacing="0.5">BOTTOM · SHARED OBSERVABILITY LAYER (functions/api/_middleware.ts)</text>
+
+  <!-- O1 -->
+  <rect x="60" y="660" width="320" height="72" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="76" y="684" fill="#0f172a" font-size="13" font-weight="700">Trace &amp; Secret Redactor</text>
+  <text x="76" y="704" fill="#475569" font-size="11.5">W3C traceparent, server latency (ms),</text>
+  <text x="76" y="720" fill="#475569" font-size="11.5">&amp; automatic token/PII masking.</text>
+
+  <!-- Arrow O1 -> O2 -->
+  <line x1="380" y1="696" x2="438" y2="696" stroke="#475569" stroke-width="2" marker-end="url(#arrow-slate)" />
+
+  <!-- O2 -->
+  <rect x="442" y="660" width="320" height="72" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="458" y="684" fill="#0f172a" font-size="13" font-weight="700">XRayTelemetryDrawer.tsx</text>
+  <text x="458" y="704" fill="#475569" font-size="11.5">Sticky-bottom drawer inside Lab 1:</text>
+  <text x="458" y="720" fill="#475569" font-size="11.5">Security Audit Feed &amp; Live Decoded Proof.</text>
+
+  <!-- Dotted Arrow O2 -> O3 -->
+  <line x1="762" y1="696" x2="820" y2="696" stroke="#d97706" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrow-amber)" />
+
+  <!-- O3 -->
+  <rect x="824" y="660" width="316" height="72" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.2" />
+  <text x="840" y="684" fill="#92400e" font-size="13" font-weight="700">Grafana Cloud / New Relic</text>
+  <text x="840" y="704" fill="#92400e" font-size="11.5">Async OTLP/HTTP export via waitUntil()</text>
+  <text x="840" y="720" fill="#92400e" font-size="11.5">(0ms user delay · Free Forever Tier).</text>
+</svg>

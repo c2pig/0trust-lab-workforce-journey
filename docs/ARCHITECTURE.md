@@ -1,0 +1,44 @@
+# Workforce Identity Lifecycle (`0trust-lab-workforce-journey`) — Local Architecture
+
+> **Role in the 0trust.dev Ecosystem**: Standalone **Model 1** micro-lab powering **Lab 1 (`/workforce-journey`)** at [`https://workforce-journey.lab.0trust.dev`](https://workforce-journey.lab.0trust.dev) (local dev: `http://localhost:5174`).
+> **Global Architecture Reference**: [`c2pig/0trust.dev/docs/ARCHITECTURE.md`](https://github.com/c2pig/0trust.dev/blob/main/docs/ARCHITECTURE.md)
+
+## Architecture Diagrams
+
+- **Top-Down Value-Stream Blueprint**: [workforce_journey_blueprint_topdown.svg](./diagrams/workforce_journey_blueprint_topdown.svg)
+- **Platform Capability Zoom-In**: [workforce_journey_platform_capability_zoomin.svg](./diagrams/workforce_journey_platform_capability_zoomin.svg)
+
+## Components & Boundaries
+
+### 1. Standalone Frontend (`src/`)
+- **Entry & Shell**: [`src/main.tsx`](../src/main.tsx) → [`src/App.tsx`](../src/App.tsx) mounts [`WorkforceLabPage`](../src/pages/WorkforceLabPage.tsx) with an `onBackHome` link returning to `0trust.dev` (`http://localhost:5173/` in local dev, `https://0trust.dev/` in production).
+- **3-Seat Role Switcher** ([`RoleSwitcherBar`](../src/components/RoleSwitcherBar.tsx)):
+  1. **Maya Lin** (`Finance Ops`) — FinCore Treasury ERP + Access Hub
+  2. **Marcus Chen** (`Finance Manager`) — AccessGuard Approval Inbox
+  3. **Priya Nair** (`SecOps`) — Identity Threat Console
+- **X-Ray Telemetry Drawer** ([`XRayTelemetryDrawer`](../src/components/XRayTelemetryDrawer.tsx)): Live W3C `traceparent` spans, decoded JWT headers/claims, and SCIM 2.0 record state.
+- **Client Engine** ([`workforceJourneyClient.ts`](../src/engine/workforceJourneyClient.ts)): Calls `/api/workforce-journey/*` on Cloudflare Pages Functions with deterministic browser WebCrypto fallback when running under pure Vite local dev without Wrangler.
+
+### 2. Edge Service Layer (`functions/api/`)
+- **Observability Middleware** ([`_middleware.ts`](../functions/api/_middleware.ts)): Propagates W3C `traceparent`, redacts `Authorization` headers, and exports optional OTLP spans.
+- **IdP Adapter** ([`idpAdapter.ts`](../functions/api/lib/idpAdapter.ts)): Dual-mode adapter supporting `edge-webcrypto` (KV-backed SCIM 2.0 + HS256 JWTs) and live `entra-external-id` (Microsoft Entra External ID OIDC + Microsoft Graph + optional `iam-demo` PAM API).
+- **Crypto Helpers** ([`workforceJourneyCrypto.ts`](../functions/api/lib/workforceJourneyCrypto.ts)): HS256 JWT signing/verification via WebCrypto.
+- **API Endpoints** (`functions/api/workforce-journey/`):
+  - `GET /api/workforce-journey/config`
+  - `POST /api/workforce-journey/login-provision`
+  - `POST /api/workforce-journey/jit-submit`
+  - `POST /api/workforce-journey/jit-decision`
+  - `POST /api/workforce-journey/request-jit`
+  - `POST /api/workforce-journey/protected-call`
+  - `POST /api/workforce-journey/logout`
+  - `GET /api/workforce-journey/entra/login`
+  - `GET /api/workforce-journey/entra/callback`
+
+### 3. KV State Prefixes (`STATE_KV`)
+- `lab1:dir:<sessionId>` — SCIM 2.0 directory record & active `jti` list
+- `lab1:jit-req:<sessionId>:<requestId>` — Pending/decided JIT elevation requests
+- `lab1:revoked:<jti>` — CAEP Universal Logout revocation tombstones
+
+### 4. Infrastructure (`infra/terraform/`)
+- Provisions the Cloudflare Pages project (`0trust-lab-workforce-journey`), custom domain (`workforce-journey.lab.0trust.dev`), and `STATE_KV` binding via `managed-infrastructure//modules/cloudflare-pages-lab`.
+- Provisions the Microsoft Entra External ID (CIAM) app registration and 15-minute JIT privileged security group via `managed-infrastructure//modules/entra-external-ciam`.

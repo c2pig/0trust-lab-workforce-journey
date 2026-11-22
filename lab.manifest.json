@@ -1,0 +1,56 @@
+{
+  "id": "workforce-journey",
+  "title": "Workforce Identity Lifecycle",
+  "domainLabel": "Workforce Identity",
+  "description": "Test SCIM 2.0 Joiner/SoD rules, mint a 15-minute JIT token, and prove instant Universal Logout (CAEP) revocation.",
+  "repo": "c2pig/0trust-lab-workforce-journey",
+  "routePath": "/workforce-journey",
+  "standaloneUrl": "https://workforce-journey.lab.0trust.dev",
+  "localDevPort": 5174,
+  "archetype": "A",
+  "seats": [
+    {
+      "id": "maya-ops",
+      "persona": "Maya Lin",
+      "roleLabel": "Finance Ops",
+      "appLabel": "FinCore Treasury ERP + Access Hub"
+    },
+    {
+      "id": "marcus-mgr",
+      "persona": "Marcus Chen",
+      "roleLabel": "Finance Manager",
+      "appLabel": "AccessGuard Approval Inbox"
+    },
+    {
+      "id": "priya-secops",
+      "persona": "Priya Nair",
+      "roleLabel": "SecOps",
+      "appLabel": "Identity Threat Console"
+    }
+  ],
+  "apiEndpoints": [
+    "/api/workforce-journey/config",
+    "/api/workforce-journey/login-provision",
+    "/api/workforce-journey/jit-submit",
+    "/api/workforce-journey/jit-decision",
+    "/api/workforce-journey/request-jit",
+    "/api/workforce-journey/protected-call",
+    "/api/workforce-journey/logout",
+    "/api/workforce-journey/entra/login",
+    "/api/workforce-journey/entra/callback"
+  ],
+  "kvPrefixes": [
+    "lab1:dir:",
+    "lab1:jit-req:",
+    "lab1:revoked:"
+  ],
+  "infraDependencies": [
+    "managed-infrastructure/modules/cloudflare-pages-lab",
+    "managed-infrastructure/modules/entra-external-ciam"
+  ],
+  "diagrams": {
+    "localArchitectureMd": "docs/ARCHITECTURE.md",
+    "topdownSvg": "docs/diagrams/workforce_journey_blueprint_topdown.svg",
+    "zoominSvg": "docs/diagrams/workforce_journey_platform_capability_zoomin.svg"
+  }
+}

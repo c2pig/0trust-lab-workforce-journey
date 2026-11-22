@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 920" width="1280" height="920" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif">
+  <defs>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
+    </marker>
+    <marker id="arr-emerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#059669" />
+    </marker>
+    <marker id="arr-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569" />
+    </marker>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="920" fill="#f8fafc" />
+
+  <!-- Header -->
+  <text x="36" y="40" fill="#0f172a" font-size="20" font-weight="700">Platform Capability Zoom-In: Lab 1 (Workforce Identity Lifecycle) + Repo Ownership</text>
+  <text x="36" y="62" fill="#64748b" font-size="13">End-to-end internal wiring with exact GitHub repository &amp; module metadata on every layer</text>
+
+  <!-- ====================================================================== -->
+  <!-- ROW 1: LAB 1 EXPERIENCE TRIGGERS -->
+  <!-- ====================================================================== -->
+  <rect x="36" y="82" width="1208" height="134" rx="10" fill="#ffffff" stroke="#10b981" stroke-width="1.5" />
+  <rect x="52" y="94" width="390" height="22" rx="4" fill="#ecfdf5" />
+  <text x="64" y="109" fill="#047857" font-size="11" font-weight="700" letter-spacing="0.5">1. LAB 1 · 3-SEAT ROLE-PLAY TRIGGERS (BROWSER UI)</text>
+  <rect x="850" y="94" width="378" height="22" rx="4" fill="#d1fae5" />
+  <text x="860" y="109" fill="#065f46" font-size="9.5" font-weight="600" font-family="monospace">repo: c2pig/0trust.dev · src/components/RoleSwitcherBar.tsx</text>
+
+  <!-- Seat 1 Trigger -->
+  <rect x="52" y="124" width="372" height="78" rx="7" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="66" y="143" fill="#0f172a" font-size="12.5" font-weight="700">Seat 1 (Maya Lin): ERP + Access Hub</text>
+  <text x="66" y="160" fill="#475569" font-size="11.5">Base SSO (403) · SoD/ZSP traps · Submit 15m JIT</text>
+  <text x="66" y="176" fill="#1d4ed8" font-size="10" font-weight="600" font-family="monospace">POST /login-provision · POST /jit-submit</text>
+  <rect x="66" y="182" width="344" height="16" rx="3" fill="#e2e8f0" />
+  <text x="72" y="193" fill="#334155" font-size="9.5" font-family="monospace">repo: c2pig/0trust.dev · src/pages/WorkforceLabPage.tsx</text>
+
+  <!-- Handoff arrow 1->2 -->
+  <line x1="424" y1="163" x2="450" y2="163" stroke="#059669" stroke-width="2" marker-end="url(#arr-emerald)" />
+
+  <!-- Seat 2 Trigger -->
+  <rect x="454" y="124" width="372" height="78" rx="7" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="468" y="143" fill="#0f172a" font-size="12.5" font-weight="700">Seat 2 (Marcus Chen): Approval Inbox</text>
+  <text x="468" y="160" fill="#475569" font-size="11.5">Review #REQ · Block Permanent (403) · Approve/Deny</text>
+  <text x="468" y="176" fill="#1d4ed8" font-size="10.5" font-weight="600" font-family="monospace">POST /api/workforce-journey/jit-decision</text>
+  <rect x="468" y="182" width="344" height="16" rx="3" fill="#e2e8f0" />
+  <text x="474" y="193" fill="#334155" font-size="9" font-family="monospace">repo: c2pig/0trust.dev · src/engine/workforceJourneyClient.ts</text>
+
+  <!-- Handoff arrow 2->3 -->
+  <line x1="826" y1="163" x2="852" y2="163" stroke="#059669" stroke-width="2" marker-end="url(#arr-emerald)" />
+
+  <!-- Seat 3 Trigger -->
+  <rect x="856" y="124" width="372" height="78" rx="7" fill="#f8fafc" stroke="#cbd5e1" />
+  <text x="870" y="143" fill="#0f172a" font-size="12.5" font-weight="700">Seat 3 (Priya Nair): Threat Console &amp; CAEP</text>
+  <text x="870" y="160" fill="#475569" font-size="11.5">Export (200) → ALERT-9914 → Revoke → Replay (401)</text>
+  <text x="870" y="176" fill="#1d4ed8" font-size="10" font-weight="600" font-family="monospace">POST /api/workforce-journey/protected-call &amp; /logout</text>
+  <rect x="870" y="182" width="344" height="16" rx="3" fill="#e2e8f0" />
+  <text x="876" y="193" fill="#334155" font-size="9.5" font-family="monospace">repo: c2pig/0trust.dev · src/pages/WorkforceLabPage.tsx</text>
+
+  <!-- Down arrows Row 1 -> Row 2 -->
+  <line x1="238" y1="216" x2="238" y2="246" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+  <line x1="640" y1="216" x2="640" y2="246" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+  <line x1="1042" y1="216" x2="1042" y2="246" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+
+  <!-- ====================================================================== -->
+  <!-- ROW 2: SHARED PLATFORM MIDDLEWARE -->
+  <!-- ====================================================================== -->
+  <rect x="36" y="250" width="1208" height="92" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5" />
+  <rect x="52" y="262" width="380" height="22" rx="4" fill="#fef3c7" />
+  <text x="64" y="277" fill="#92400e" font-size="11" font-weight="700" letter-spacing="0.5">2. SHARED PLATFORM MIDDLEWARE (OBSERVABILITY)</text>
+  <rect x="890" y="262" width="338" height="22" rx="4" fill="#fde68a" />
+  <text x="900" y="277" fill="#78350f" font-size="10" font-weight="600" font-family="monospace">repo: c2pig/0trust.dev · functions/api/_middleware.ts</text>
+
+  <rect x="52" y="294" width="280" height="34" rx="6" fill="#ffffff" stroke="#fde68a" />
+  <text x="64" y="315" fill="#78350f" font-size="11.5" font-weight="600">W3C traceparent + Visitor Session ID</text>
+
+  <rect x="348" y="294" width="280" height="34" rx="6" fill="#ffffff" stroke="#fde68a" />
+  <text x="360" y="315" fill="#78350f" font-size="11.5" font-weight="600">Edge Latency Timer (ms) + Status</text>
+
+  <rect x="644" y="294" width="280" height="34" rx="6" fill="#ffffff" stroke="#fde68a" />
+  <text x="656" y="315" fill="#78350f" font-size="11.5" font-weight="600">Auto Log Redactor (Masks JWT sigs)</text>
+
+  <rect x="940" y="294" width="288" height="34" rx="6" fill="#ffffff" stroke="#fde68a" />
+  <text x="952" y="315" fill="#78350f" font-size="11.5" font-weight="600">Sync _telemetry + Async waitUntil OTLP</text>
+
+  <!-- Down arrows Row 2 -> Row 3 -->
+  <line x1="238" y1="342" x2="238" y2="374" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+  <line x1="640" y1="342" x2="640" y2="374" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+  <line x1="1042" y1="342" x2="1042" y2="374" stroke="#2563eb" stroke-width="2" marker-end="url(#arr-blue)" />
+
+  <!-- ====================================================================== -->
+  <!-- ROW 3: LAB 1 CORE PLATFORM CAPABILITIES -->
+  <!-- ====================================================================== -->
+  <rect x="36" y="378" width="1208" height="274" rx="10" fill="#ffffff" stroke="#3b82f6" stroke-width="1.5" />
+  <rect x="52" y="390" width="465" height="22" rx="4" fill="#eff6ff" />
+  <text x="64" y="405" fill="#1d4ed8" font-size="11" font-weight="700" letter-spacing="0.5">3. LAB 1 CORE PLATFORM CAPABILITIES (CLOUDFLARE FUNCTIONS + WEBCRYPTO)</text>
+
+  <!-- Capability Column 1: Joiner / SCIM / SoD / JIT Submit -->
+  <rect x="52" y="424" width="372" height="212" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="68" y="446" fill="#0f172a" font-size="13.5" font-weight="700">A. Joiner Auth, SCIM &amp; JIT Submit</text>
+  <rect x="68" y="454" width="340" height="17" rx="3" fill="#dbeafe" />
+  <text x="74" y="466" fill="#1e40af" font-size="9.5" font-family="monospace">c2pig/0trust.dev · login-provision.ts &amp; jit-submit.ts</text>
+
+  <rect x="68" y="478" width="340" height="42" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="78" y="495" fill="#dc2626" font-size="11.5" font-weight="700">1. SoD Rule Matrix (SOD-FIN-001)</text>
+  <text x="78" y="512" fill="#475569" font-size="11">Rejects Payment Creator + Audit Approver → HTTP 403</text>
+
+  <rect x="68" y="528" width="340" height="42" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="78" y="545" fill="#0f172a" font-size="11.5" font-weight="700">2. ZSP Max TTL &amp; PENDING Queue</text>
+  <text x="78" y="562" fill="#475569" font-size="11">Blocks ttl &gt; 900s (400); queues PENDING in STATE_KV</text>
+
+  <rect x="68" y="578" width="340" height="42" rx="6" fill="#ecfdf5" stroke="#a7f3d0" />
+  <text x="78" y="595" fill="#065f46" font-size="11.5" font-weight="700">3. WebCrypto Session JWT &amp; SCIM 2.0</text>
+  <text x="78" y="612" fill="#047857" font-size="11">Signs HMAC-SHA256 JWT (sub, roles, jti, exp: +1h)</text>
+
+  <!-- Capability Column 2: 2-Step JIT Approval Authority -->
+  <rect x="454" y="424" width="372" height="212" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="470" y="446" fill="#0f172a" font-size="13.5" font-weight="700">B. 2-Step JIT Approval Authority</text>
+  <rect x="470" y="454" width="340" height="17" rx="3" fill="#dbeafe" />
+  <text x="476" y="466" fill="#1e40af" font-size="9.5" font-family="monospace">c2pig/0trust.dev · jit-decision.ts (+request-jit.ts)</text>
+
+  <rect x="470" y="478" width="340" height="42" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="480" y="495" fill="#dc2626" font-size="11.5" font-weight="700">1. Load PENDING &amp; ZSP Policy Gate</text>
+  <text x="480" y="512" fill="#475569" font-size="11">Reads KV; blocks grant_permanent → HTTP 403 ZSP</text>
+
+  <rect x="470" y="528" width="340" height="42" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="480" y="545" fill="#0f172a" font-size="11.5" font-weight="700">2. Deny or Approve via IdpAdapter</text>
+  <text x="480" y="562" fill="#475569" font-size="11">Supports deny (JIT_DENIED) &amp; iam-demo 15m elevateJit</text>
+
+  <rect x="470" y="578" width="340" height="42" rx="6" fill="#eff6ff" stroke="#bfdbfe" />
+  <text x="480" y="595" fill="#1e40af" font-size="11.5" font-weight="700">3. Mint Short-Lived 15m JIT Token</text>
+  <text x="480" y="612" fill="#1d4ed8" font-size="11">Signs jit_jwt (scope: admin:temp, approved_by, +15m)</text>
+
+  <!-- Capability Column 3: Protected API & Universal Logout -->
+  <rect x="856" y="424" width="372" height="212" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" />
+  <text x="872" y="446" fill="#0f172a" font-size="13.5" font-weight="700">C. Protected ERP &amp; CAEP Revocation</text>
+  <rect x="872" y="454" width="340" height="17" rx="3" fill="#dbeafe" />
+  <text x="878" y="466" fill="#1e40af" font-size="9.5" font-family="monospace">c2pig/0trust.dev · protected-call.ts &amp; logout.ts</text>
+
+  <rect x="872" y="478" width="340" height="42" rx="6" fill="#ffffff" stroke="#e2e8f0" />
+  <text x="882" y="495" fill="#0f172a" font-size="11.5" font-weight="700">1. Protected ERP Scope &amp; Expiry Gate</text>
+  <text x="882" y="512" fill="#475569" font-size="11">admin:temp (200), ROLE_DENIED (403), EXP (401)</text>
+
+  <rect x="872" y="528" width="340" height="42" rx="6" fill="#fef2f2" stroke="#fecaca" />
+  <text x="882" y="545" fill="#991b1b" font-size="11.5" font-weight="700">2. Universal Logout (OpenID CAEP)</text>
+  <text x="882" y="562" fill="#b91c1c" font-size="11">Writes revoked jti to KV + session-revoked SET</text>
+
+  <rect x="872" y="578" width="340" height="42" rx="6" fill="#fef2f2" stroke="#fecaca" />
+  <text x="882" y="595" fill="#991b1b" font-size="11.5" font-weight="700">3. Mid-Flight Revocation Proof</text>
+  <text x="882" y="612" fill="#b91c1c" font-size="11">Maya next call → HTTP 401 CAEP_SESSION_REVOKED</text>
+
+  <!-- Down arrows Row 3 -> Row 4 -->
+  <line x1="238" y1="652" x2="238" y2="686" stroke="#475569" stroke-width="2" marker-end="url(#arr-slate)" />
+  <line x1="640" y1="652" x2="640" y2="686" stroke="#475569" stroke-width="2" marker-end="url(#arr-slate)" />
+  <line x1="1042" y1="652" x2="1042" y2="686" stroke="#d97706" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arr-amber)" />
+
+  <!-- ====================================================================== -->
+  <!-- ROW 4: UNDERPINNING STATE, ENTERPRISE IDP & OBSERVABILITY -->
+  <!-- ====================================================================== -->
+  <rect x="36" y="690" width="1208" height="206" rx="10" fill="#0f172a" />
+  <rect x="52" y="704" width="510" height="22" rx="4" fill="#1e293b" />
+  <text x="64" y="719" fill="#94a3b8" font-size="11" font-weight="700" letter-spacing="0.5">4. UNDERPINNING STATE, PLUGGABLE ENTERPRISE IDP &amp; OBSERVABILITY ($0/MO)</text>
+
+  <!-- Store 1: Cloudflare KV -->
+  <rect x="52" y="738" width="372" height="142" rx="8" fill="#1e293b" stroke="#334155" />
+  <text x="68" y="759" fill="#ffffff" font-size="13" font-weight="700">Cloudflare Workers KV (STATE_KV)</text>
+  <rect x="68" y="766" width="340" height="17" rx="3" fill="#0f172a" />
+  <text x="74" y="778" fill="#38bdf8" font-size="9.5" font-family="monospace">repo: c2pig/0trust.dev · infra/terraform/main.tf</text>
+  <text x="68" y="798" fill="#94a3b8" font-size="11">Per-visitor isolated state (1h auto-expiring TTL):</text>
+  <text x="68" y="817" fill="#38bdf8" font-size="10.5" font-family="monospace">lab1:dir:&lt;sid&gt;</text>
+  <text x="234" y="817" fill="#cbd5e1" font-size="10.5">→ Active SCIM roles</text>
+  <text x="68" y="835" fill="#fbbf24" font-size="10.5" font-family="monospace">lab1:jit-req:&lt;sid&gt;:&lt;req&gt;</text>
+  <text x="234" y="835" fill="#cbd5e1" font-size="10.5">→ Pending JIT queue</text>
+  <text x="68" y="853" fill="#f87171" font-size="10.5" font-family="monospace">lab1:revoked:&lt;sid&gt;:&lt;jti&gt;</text>
+  <text x="234" y="853" fill="#cbd5e1" font-size="10.5">→ CAEP revoked marker</text>
+  <text x="68" y="871" fill="#6ee7b7" font-size="10">Provisioned &amp; deployed via .github/workflows/terraform.yml</text>
+
+  <!-- Store 2: Pluggable Enterprise IdP -->
+  <rect x="454" y="738" width="372" height="142" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.2" />
+  <text x="470" y="759" fill="#ffffff" font-size="13" font-weight="700">Pluggable IdP Adapter (IdpAdapter)</text>
+  <rect x="470" y="766" width="340" height="17" rx="3" fill="#0f172a" />
+  <text x="476" y="778" fill="#6ee7b7" font-size="9.5" font-family="monospace">c2pig/0trust.dev · functions/api/lib/idpAdapter.ts</text>
+  <text x="470" y="800" fill="#6ee7b7" font-size="11" font-weight="600">Default: Edge WebCrypto + KV ($0/mo, zero setup)</text>
+  <text x="470" y="821" fill="#cbd5e1" font-size="11">• Live Mode: Entra External ID (Email OTP PKCE) + pam-api</text>
+  <text x="478" y="838" fill="#94a3b8" font-size="10" font-family="monospace">Graph /users · /groups/$ref · /revokeSignInSessions</text>
+  <text x="470" y="864" fill="#94a3b8" font-size="10" font-family="monospace">IaC: managed-infrastructure · showcase/entra-external-lab1</text>
+
+  <!-- Store 3: Observability -->
+  <rect x="856" y="738" width="372" height="142" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.2" />
+  <text x="872" y="759" fill="#ffffff" font-size="13" font-weight="700">Observability &amp; Audit Pipeline (OTLP)</text>
+  <rect x="872" y="766" width="340" height="17" rx="3" fill="#0f172a" />
+  <text x="878" y="778" fill="#fcd34d" font-size="9" font-family="monospace">c2pig/0trust.dev · src/components/XRayTelemetryDrawer.tsx</text>
+  <text x="872" y="800" fill="#fcd34d" font-size="11" font-weight="600">1. Sticky X-Ray Telemetry Drawer (Sync)</text>
+  <text x="880" y="817" fill="#cbd5e1" font-size="11">Audit Feed + Live Decoded Proof (JWT, SCIM, CAEP)</text>
+  <text x="872" y="840" fill="#fcd34d" font-size="11" font-weight="600">2. Grafana Cloud / New Relic (Async waitUntil)</text>
+  <text x="880" y="857" fill="#cbd5e1" font-size="11">OTLP/HTTP to Tempo + Loki · 0ms user delay</text>
+  <text x="880" y="872" fill="#94a3b8" font-size="10" font-family="monospace">Exporter: c2pig/0trust.dev · functions/api/_middleware.ts</text>
+</svg>
