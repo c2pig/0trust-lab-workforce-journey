@@ -11,12 +11,12 @@
 ## Components & Boundaries
 
 ### 1. Standalone Frontend (`src/`)
-- **Entry & Shell**: [`src/main.tsx`](../src/main.tsx) → [`src/App.tsx`](../src/App.tsx) mounts [`WorkforceLabPage`](../src/pages/WorkforceLabPage.tsx) with an `onBackHome` link returning to `0trust.dev` (`http://localhost:5173/` in local dev, `https://0trust.dev/` in production).
-- **3-Seat Role Switcher** ([`RoleSwitcherBar`](../src/components/RoleSwitcherBar.tsx)):
-  1. **Maya Lin** (`Finance Ops`) — FinCore Treasury ERP + Access Hub
-  2. **Marcus Chen** (`Finance Manager`) — AccessGuard Approval Inbox
-  3. **Priya Nair** (`SecOps`) — Identity Threat Console
-- **X-Ray Telemetry Drawer** ([`XRayTelemetryDrawer`](../src/components/XRayTelemetryDrawer.tsx)): Live W3C `traceparent` spans, decoded JWT headers/claims, and SCIM 2.0 record state.
+- **Entry & Shell**: [`src/main.tsx`](../src/main.tsx) → [`src/App.tsx`](../src/App.tsx) mounts [`WorkforceLabPage`](../src/pages/WorkforceLabPage.tsx) with an `onBackHome` link returning to `0trust.dev` (`http://localhost:5173/` in local dev, `https://0trust.dev/` in production) and an interactive [`driver.js`](https://driverjs.com/) orientation tour overlay (`Lab Tour`).
+- **Dropdown Role Switcher** ([`RoleSwitcherBar`](../src/components/RoleSwitcherBar.tsx)): Compact AppShell dropdown with notification indicators switching between isolated role workspaces:
+  1. **Maya Lin** (`Finance Ops`) — FinCore Treasury ERP (settlement batch table, HTTP 403 Standing Privilege modal, 15m JIT request modal)
+  2. **Marcus Chen** (`Finance Manager`) — AccessGuard PAM (Approval Desk & active JIT grants)
+  3. **Priya Nair** (`SecOps / IAM Admin`) — JIT & Session Activity Monitor (live JIT/session activity table & CAEP Universal Logout trigger)
+- **X-Ray Telemetry Drawer** ([`XRayTelemetryDrawer`](../src/components/XRayTelemetryDrawer.tsx)): Sticky-bottom drawer displaying live W3C `traceparent` spans, decoded JWT headers/claims, and SCIM 2.0 record state.
 - **Client Engine** ([`workforceJourneyClient.ts`](../src/engine/workforceJourneyClient.ts)): Calls `/api/workforce-journey/*` on Cloudflare Pages Functions with deterministic browser WebCrypto fallback when running under pure Vite local dev without Wrangler.
 
 ### 2. Edge Service Layer (`functions/api/`)
