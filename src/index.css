@@ -663,7 +663,7 @@ pre,
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13.5px;
   text-align: left;
 }
 
@@ -671,15 +671,15 @@ pre,
   background-color: var(--bg-canvas);
   color: var(--text-secondary);
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 10px 12px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .data-table td {
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
 }

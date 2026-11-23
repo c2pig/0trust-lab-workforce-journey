@@ -539,7 +539,7 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
     {
       id: 'maya-lin',
       name: 'Maya Lin',
-      roleLabel: 'Finance Ops',
+      roleLabel: 'Finance Controller',
       appLabel: 'FinCore Treasury ERP',
       avatarInitials: 'ML',
       badge: isRevoked
@@ -562,7 +562,7 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
     {
       id: 'priya-nair',
       name: 'Priya Nair',
-      roleLabel: 'SecOps / IAM Admin',
+      roleLabel: 'Security Ops',
       appLabel: 'JIT Activity Monitor',
       avatarInitials: 'PN',
       badge:
@@ -833,11 +833,11 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                   >
                     FC
                   </span>
-                  <span style={{ fontSize: '14px', fontWeight: 700 }}>FinCore Treasury ERP</span>
+                  <span style={{ fontSize: '15px', fontWeight: 700 }}>FinCore Treasury ERP</span>
                   <span
                     style={{
-                      fontSize: '12px',
-                      color: '#94a3b8',
+                      fontSize: '13px',
+                      color: '#cbd5e1',
                       borderLeft: '1px solid #334155',
                       paddingLeft: '10px'
                     }}
@@ -846,13 +846,13 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '12px', color: '#cbd5e1' }}>Maya Lin (EMP-7721)</span>
+                  <span style={{ fontSize: '13px', color: '#e2e8f0' }}>Maya Lin · Finance Controller</span>
                   <span
                     className="mono"
                     style={{
-                      padding: '3px 8px',
+                      padding: '4px 9px',
                       borderRadius: '5px',
-                      fontSize: '11.5px',
+                      fontSize: '12.5px',
                       fontWeight: 600,
                       backgroundColor: isRevoked ? '#450a0a' : isElevatedActive ? '#064e3b' : '#1e293b',
                       color: isRevoked ? '#fca5a5' : isElevatedActive ? '#6ee7b7' : '#fcd34d',
@@ -878,15 +878,15 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                 <div
                   style={{
                     backgroundColor: 'var(--bg-surface)',
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-subtle)'
                   }}
                 >
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                     Batch Total
                   </div>
-                  <div className="mono" style={{ fontSize: '17px', fontWeight: 700, marginTop: '2px' }}>
+                  <div className="mono" style={{ fontSize: '18px', fontWeight: 700, marginTop: '3px' }}>
                     $14,250,800.00
                   </div>
                 </div>
@@ -894,17 +894,17 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                 <div
                   style={{
                     backgroundColor: 'var(--bg-surface)',
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-subtle)'
                   }}
                 >
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                     Status
                   </div>
                   <div
                     style={{
-                      fontSize: '13.5px',
+                      fontSize: '15px',
                       fontWeight: 700,
                       marginTop: '4px',
                       color:
@@ -920,15 +920,15 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                 <div
                   style={{
                     backgroundColor: 'var(--bg-surface)',
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-subtle)'
                   }}
                 >
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                     Required Role
                   </div>
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, marginTop: '4px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '4px' }}>
                     Payment Creator
                   </div>
                 </div>
@@ -936,18 +936,18 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                 <div
                   style={{
                     backgroundColor: 'var(--bg-surface)',
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-subtle)'
                   }}
                 >
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                     Privilege Window
                   </div>
                   <div
                     className="mono"
                     style={{
-                      fontSize: '13.5px',
+                      fontSize: '15px',
                       fontWeight: 700,
                       marginTop: '4px',
                       color: isElevatedActive ? 'var(--accent-emerald)' : 'var(--text-primary)'
@@ -961,7 +961,7 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
               {/* Batch Action Header */}
               <div
                 style={{
-                  padding: '12px 18px',
+                  padding: '14px 18px',
                   borderBottom: '1px solid var(--border-subtle)',
                   display: 'flex',
                   alignItems: 'center',
@@ -971,16 +971,17 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                 }}
               >
                 <div>
-                  <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <h2 style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     Treasury Settlement Batch #TB-9042
                   </h2>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                     38 cleared vendor invoices ready for SWIFT dispatch.
                   </p>
                 </div>
                 <button
                   type="button"
                   className="btn btn-primary"
+                  style={{ fontSize: '13.5px', padding: '9px 16px' }}
                   disabled={erpLoading || provisioning || !sessionJwt}
                   onClick={() => void handleExportQ4Ledger()}
                 >
@@ -1113,10 +1114,10 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                   >
                     AG
                   </span>
-                  <span style={{ fontSize: '14px', fontWeight: 700 }}>AccessGuard PAM</span>
-                  <span className="badge">Approval Desk</span>
+                  <span style={{ fontSize: '15px', fontWeight: 700 }}>AccessGuard PAM</span>
+                  <span className="badge" style={{ fontSize: '12px' }}>Approval Desk</span>
                 </div>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                   Marcus Chen · Finance Manager
                 </span>
               </div>
@@ -1132,11 +1133,11 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                   style={{
                     backgroundColor: 'var(--bg-canvas)',
                     borderRight: '1px solid var(--border-subtle)',
-                    padding: '12px',
+                    padding: '14px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '4px',
-                    fontSize: '12.5px'
+                    gap: '6px',
+                    fontSize: '13.5px'
                   }}
                 >
                   <div
@@ -1144,7 +1145,7 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '8px 10px',
+                      padding: '9px 12px',
                       borderRadius: '6px',
                       backgroundColor: '#f3e8ff',
                       color: '#581c87',
@@ -1154,7 +1155,7 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                   >
                     <span>Approval Inbox</span>
                     {pendingRequest?.status === 'PENDING' && (
-                      <span className="badge badge-amber" style={{ padding: '1px 6px' }}>
+                      <span className="badge badge-amber" style={{ padding: '2px 7px', fontSize: '12px' }}>
                         1
                       </span>
                     )}
@@ -1164,11 +1165,11 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '8px 10px',
+                      padding: '9px 12px',
                       color: 'var(--text-secondary)'
                     }}
                   >
-                    <span>Active JIT Grants</span>
+                    <span>Active Approvals</span>
                     <span className="mono" style={{ fontWeight: 600 }}>
                       {isElevatedActive ? '1' : '0'}
                     </span>
@@ -1178,92 +1179,78 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                 {/* PAM Main Desk */}
                 <div style={{ padding: '18px' }}>
                   {pendingRequest?.status === 'PENDING' ? (
-                    <div
-                      style={{
-                        border: '1px solid #d8b4fe',
-                        borderRadius: 'var(--radius-md)',
-                        padding: '16px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '14px'
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          paddingBottom: '10px',
-                          borderBottom: '1px solid var(--border-subtle)'
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span className="badge badge-amber">Pending</span>
-                            <span className="mono" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                              #{pendingRequest.request_id}
-                            </span>
-                          </div>
-                          <h3 style={{ fontSize: '14px', fontWeight: 700, marginTop: '4px' }}>
-                            FinCore Treasury Settlement Elevation
-                          </h3>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Requested TTL</div>
-                          <div className="mono" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--accent-primary)' }}>
-                            15 Minutes
-                          </div>
-                        </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          Pending Access Approvals
+                        </h3>
+                        <span className="badge badge-amber" style={{ fontSize: '12px' }}>
+                          1 Awaiting Review
+                        </span>
                       </div>
 
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                          gap: '10px',
-                          fontSize: '12px'
-                        }}
-                      >
-                        <div style={{ padding: '8px 10px', borderRadius: '6px', backgroundColor: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)' }}>
-                          <div style={{ color: 'var(--text-muted)' }}>Requester</div>
-                          <div style={{ fontWeight: 700, marginTop: '2px' }}>{pendingRequest.requester.name}</div>
-                        </div>
-                        <div style={{ padding: '8px 10px', borderRadius: '6px', backgroundColor: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)' }}>
-                          <div style={{ color: 'var(--text-muted)' }}>Scope</div>
-                          <div className="mono" style={{ fontWeight: 700, marginTop: '2px' }}>
-                            {pendingRequest.requested_scope}
-                          </div>
-                        </div>
-                        <div style={{ padding: '8px 10px', borderRadius: '6px', backgroundColor: 'var(--bg-canvas)', border: '1px solid var(--border-subtle)' }}>
-                          <div style={{ color: 'var(--text-muted)' }}>Policy Verification</div>
-                          <div style={{ fontWeight: 700, color: 'var(--accent-emerald)', marginTop: '2px' }}>
-                            15m Ephemeral · Verified
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button
-                          type="button"
-                          className="btn btn-sm"
-                          disabled={marcusLoading}
-                          onClick={() => void handleMarcusDecision('deny')}
-                        >
-                          Deny
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm"
-                          disabled={marcusLoading}
-                          onClick={() => void handleMarcusDecision('approve')}
-                          style={{
-                            backgroundColor: '#7c3aed',
-                            borderColor: '#7c3aed',
-                            color: '#ffffff'
-                          }}
-                        >
-                          {marcusLoading ? 'Approving…' : 'Approve 15-Minute Access'}
-                        </button>
+                      <div className="data-table-wrapper">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Who</th>
+                              <th>Requested Action</th>
+                              <th>Business Justification</th>
+                              <th>When / Duration</th>
+                              <th style={{ textAlign: 'right' }}>Decision</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>
+                                <div style={{ fontWeight: 700 }}>{pendingRequest.requester.name}</div>
+                                <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                                  Finance Controller
+                                </div>
+                              </td>
+                              <td style={{ fontWeight: 600 }}>
+                                Export Q4 Treasury Settlement Batch
+                              </td>
+                              <td style={{ color: 'var(--text-secondary)', maxWidth: '300px' }}>
+                                {pendingRequest.justification}
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: 600 }}>15 Minutes</div>
+                                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+                                  Just now · Temporary
+                                </div>
+                              </td>
+                              <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                <div style={{ display: 'inline-flex', gap: '8px' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm"
+                                    style={{ fontSize: '13px', padding: '7px 12px' }}
+                                    disabled={marcusLoading}
+                                    onClick={() => void handleMarcusDecision('deny')}
+                                  >
+                                    Deny
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-sm"
+                                    disabled={marcusLoading}
+                                    onClick={() => void handleMarcusDecision('approve')}
+                                    style={{
+                                      fontSize: '13px',
+                                      padding: '7px 14px',
+                                      backgroundColor: '#7c3aed',
+                                      borderColor: '#7c3aed',
+                                      color: '#ffffff'
+                                    }}
+                                  >
+                                    {marcusLoading ? 'Approving…' : 'Approve 15m Access'}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   ) : approvedRequest && isElevatedActive ? (
@@ -1272,7 +1259,7 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                         border: '1px solid var(--accent-emerald-border)',
                         backgroundColor: 'var(--accent-emerald-dim)',
                         borderRadius: 'var(--radius-md)',
-                        padding: '16px',
+                        padding: '16px 18px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -1280,12 +1267,12 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                       }}
                     >
                       <div>
-                        <h3 style={{ fontSize: '14px', fontWeight: 700 }}>15-Minute Access Granted</h3>
-                        <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Ephemeral JIT token issued to {userEmail}.
+                        <h3 style={{ fontSize: '15.5px', fontWeight: 700 }}>15-Minute Access Approved</h3>
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+                          {approvedRequest.requester.name} (Finance Controller) is authorized to export the Q4 Treasury Ledger.
                         </p>
                       </div>
-                      <span className="badge badge-emerald mono" style={{ fontSize: '12px', padding: '4px 10px' }}>
+                      <span className="badge badge-emerald mono" style={{ fontSize: '13px', padding: '5px 12px' }}>
                         EXPIRES: {formatCountdown(jitRemainingSec)}
                       </span>
                     </div>
@@ -1294,14 +1281,14 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                       style={{
                         border: '1px dashed var(--border-strong)',
                         borderRadius: 'var(--radius-md)',
-                        padding: '28px 16px',
+                        padding: '32px 18px',
                         textAlign: 'center',
                         backgroundColor: 'var(--bg-canvas)'
                       }}
                     >
-                      <h3 style={{ fontSize: '14px', fontWeight: 700 }}>Approval Inbox Clear</h3>
-                      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        No pending elevation requests in the queue.
+                      <h3 style={{ fontSize: '15.5px', fontWeight: 700 }}>Approval Inbox Clear</h3>
+                      <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                        No pending access requests awaiting your review.
                       </p>
                     </div>
                   )}
@@ -1351,12 +1338,12 @@ export const WorkforceLabPage: React.FC<WorkforceLabPageProps> = ({ onBackHome }
                   >
                     JM
                   </span>
-                  <span style={{ fontSize: '14px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '15px', fontWeight: 700 }}>
                     JIT &amp; Session Activity Monitor
                   </span>
                 </div>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  Priya Nair · SecOps / IAM Admin
+                <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  Priya Nair · Security Ops
                 </span>
               </div>
 

@@ -91,12 +91,12 @@ export function RoleSwitcherBar<TId extends string = string>({
           display: 'inline-flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '6px 10px',
+          padding: '7px 12px',
           borderRadius: 'var(--radius-sm)',
           border: '1px solid var(--border-strong)',
           backgroundColor: 'var(--bg-canvas)',
           color: 'var(--text-primary)',
-          fontSize: '12.5px',
+          fontSize: '13.5px',
           fontWeight: 600,
           cursor: 'pointer',
           whiteSpace: 'nowrap'
@@ -105,15 +105,15 @@ export function RoleSwitcherBar<TId extends string = string>({
         <span
           aria-hidden="true"
           style={{
-            width: '20px',
-            height: '20px',
-            borderRadius: '4px',
+            width: '22px',
+            height: '22px',
+            borderRadius: '5px',
             backgroundColor: activeBg,
             color: '#ffffff',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '11px',
+            fontSize: '11.5px',
             fontWeight: 700,
             flexShrink: 0
           }}
@@ -121,7 +121,7 @@ export function RoleSwitcherBar<TId extends string = string>({
           {activeInitials}
         </span>
         <span>
-          {activeSeat.name} · {activeSeat.appLabel}
+          {activeSeat.name} · {activeSeat.roleLabel}
         </span>
         {hasOtherNotification && (
           <span
@@ -135,7 +135,7 @@ export function RoleSwitcherBar<TId extends string = string>({
             }}
           />
         )}
-        <ChevronDown size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        <ChevronDown size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
       </button>
 
       {open && (
@@ -151,7 +151,7 @@ export function RoleSwitcherBar<TId extends string = string>({
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-md)',
             boxShadow: 'var(--shadow-lg)',
-            padding: '4px',
+            padding: '6px',
             zIndex: 60
           }}
         >
@@ -177,7 +177,7 @@ export function RoleSwitcherBar<TId extends string = string>({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '10px',
-                  padding: '8px 10px',
+                  padding: '9px 10px',
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: isActive ? 'var(--accent-primary-dim)' : 'transparent',
@@ -185,19 +185,19 @@ export function RoleSwitcherBar<TId extends string = string>({
                   textAlign: 'left'
                 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '9px', minWidth: 0 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                   <span
                     aria-hidden="true"
                     style={{
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '5px',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '6px',
                       backgroundColor: bg,
                       color: '#ffffff',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '11px',
+                      fontSize: '12px',
                       fontWeight: 700,
                       flexShrink: 0
                     }}
@@ -208,7 +208,7 @@ export function RoleSwitcherBar<TId extends string = string>({
                     <span
                       style={{
                         display: 'block',
-                        fontSize: '12.5px',
+                        fontSize: '13.5px',
                         fontWeight: 700,
                         color: 'var(--text-primary)'
                       }}
@@ -218,11 +218,11 @@ export function RoleSwitcherBar<TId extends string = string>({
                     <span
                       style={{
                         display: 'block',
-                        fontSize: '11.5px',
+                        fontSize: '12.5px',
                         color: 'var(--text-secondary)'
                       }}
                     >
-                      {seat.appLabel}
+                      {seat.roleLabel}
                     </span>
                   </span>
                 </span>
@@ -231,12 +231,12 @@ export function RoleSwitcherBar<TId extends string = string>({
                   {seat.badge && seat.badge.pulse && (
                     <span
                       className={`badge badge-${seat.badge.tone}`}
-                      style={{ fontSize: '10.5px', padding: '2px 6px' }}
+                      style={{ fontSize: '11.5px', padding: '2px 7px' }}
                     >
                       {seat.badge.text}
                     </span>
                   )}
-                  {isActive && <Check size={14} style={{ color: 'var(--accent-primary)' }} />}
+                  {isActive && <Check size={15} style={{ color: 'var(--accent-primary)' }} />}
                 </span>
               </button>
             );
