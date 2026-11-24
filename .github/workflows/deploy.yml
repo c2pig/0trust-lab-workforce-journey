@@ -1,4 +1,4 @@
-name: Deploy 0trust-lab-workforce-journey to Cloudflare Pages
+name: Deploy 0trust-lab-workforce-journey (CF Pages SPA + GCP Cloud Run API)
 
 on:
   push:
@@ -9,14 +9,24 @@ on:
 permissions:
   contents: read
   deployments: write
+  id-token: write
 
 concurrency:
-  group: "cloudflare-pages-0trust-lab-workforce-journey"
+  group: "deploy-0trust-lab-workforce-journey"
   cancel-in-progress: true
 
+env:
+  LAB_SLUG: workforce-journey
+  GCP_REGION: us-central1
+  CLOUD_RUN_SERVICE: 0trust-lab-workforce-journey
+
 jobs:
-  build-and-deploy:
+  deploy-pages:
+    name: Deploy Static SPA to Cloudflare Pages
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - name: Checkout 0trust-lab-workforce-journey
         uses: actions/checkout@v4
@@ -30,12 +40,53 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck & Build Production Bundle
-        run: npm run build
+      - name: Typecheck, Test & Build Production Bundle
+        run: |
+          npm test
+          npm run build
 
-      - name: Deploy to Cloudflare Pages (Direct Upload)
+      - name: Remove functions/ so Cloudflare Pages uploads static dist/ only
+        run: rm -rf functions
+
+      - name: Deploy Static dist/ to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=0trust-lab-workforce-journey --branch=main
+
+  deploy-cloudrun:
+    name: Build & Deploy API to GCP Cloud Run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout 0trust-lab-workforce-journey
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (WIF OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker "${{ env.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build and Push Cloud Run Container Image
+        env:
+          IMAGE: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/0trust-labs/${{ env.LAB_SLUG }}:${{ github.sha }}
+        run: |
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Deploy to GCP Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.CLOUD_RUN_SERVICE }}
+          region: ${{ env.GCP_REGION }}
+          image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/0trust-labs/${{ env.LAB_SLUG }}:${{ github.sha }}
