@@ -28,7 +28,7 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          CODE_OR_INFRA_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^(src/|functions/|infra/)' || true)
+          CODE_OR_INFRA_CHANGED=$(echo "$CHANGED_FILES" | grep -E '^(src/|functions/|server/|infra/|Dockerfile$)' || true)
           DIAGRAM_UPDATED=$(echo "$CHANGED_FILES" | grep -E '^(docs/ARCHITECTURE\.md|docs/diagrams/.*\.svg|README\.md)$' || true)
 
           if [ -n "$CODE_OR_INFRA_CHANGED" ] && [ -z "$DIAGRAM_UPDATED" ]; then

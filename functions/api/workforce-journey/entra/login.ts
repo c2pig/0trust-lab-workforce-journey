@@ -1,4 +1,5 @@
 import { isEntraExternalConfigured, type WorkforceJourneyEnv } from '../../lib/idpAdapter';
+import { resolvePublicOrigin } from '../../../../server/origin';
 
 function toBase64Url(bytes: Uint8Array): string {
   let bin = '';
@@ -21,12 +22,11 @@ export async function onRequestGet(context: {
   request: Request;
   env: WorkforceJourneyEnv;
 }): Promise<Response> {
-  const url = new URL(context.request.url);
-  const origin = url.origin;
+  const origin = resolvePublicOrigin(context.request);
 
   if (!isEntraExternalConfigured(context.env)) {
     return Response.redirect(
-      `${origin}/#/workforce-journey?entra_error=NOT_CONFIGURED`,
+      `${origin}/workforce-journey?entra_error=NOT_CONFIGURED`,
       302
     );
   }

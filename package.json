@@ -5,21 +5,32 @@
   "description": "0trust.dev Lab 1 — Workforce Identity Lifecycle (SCIM 2.0 Joiner/SoD, 15m JIT Token, and CAEP Universal Logout)",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5174",
-    "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "dev": "concurrently -k -n web,api \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "vite --host 0.0.0.0 --port 5174",
+    "dev:api": "ENVIRONMENT=development tsx watch server/index.ts",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "build": "npm run typecheck && vite build && npm run build:server",
+    "build:server": "esbuild server/index.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=dist-server/index.mjs",
+    "test": "tsx --test tests/*.test.ts",
     "preview": "vite preview --host 0.0.0.0 --port 4174"
   },
   "dependencies": {
+    "@google-cloud/firestore": "^9.4.1",
+    "@hono/node-server": "^2.1.11",
     "driver.js": "^1.14.0",
+    "hono": "^4.13.21",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "concurrently": "^10.0.7",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
   }

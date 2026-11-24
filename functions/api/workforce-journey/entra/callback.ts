@@ -1,4 +1,5 @@
 import { isEntraExternalConfigured, type WorkforceJourneyEnv } from '../../lib/idpAdapter';
+import { resolvePublicOrigin } from '../../../../server/origin';
 
 function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
   const parts = jwt.split('.');
@@ -18,7 +19,7 @@ export async function onRequestGet(context: {
   env: WorkforceJourneyEnv;
 }): Promise<Response> {
   const url = new URL(context.request.url);
-  const origin = url.origin;
+  const origin = resolvePublicOrigin(context.request);
 
   const error = url.searchParams.get('error');
   if (error) {
