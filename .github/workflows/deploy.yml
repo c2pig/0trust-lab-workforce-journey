@@ -79,7 +79,7 @@ jobs:
 
       - name: Build and Push Cloud Run Container Image
         env:
-          IMAGE: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/0trust-labs/${{ env.LAB_SLUG }}:${{ github.sha }}
+          IMAGE: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/zerotrust-labs/${{ env.LAB_SLUG }}:${{ github.sha }}
         run: |
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
@@ -89,4 +89,4 @@ jobs:
         with:
           service: ${{ env.CLOUD_RUN_SERVICE }}
           region: ${{ env.GCP_REGION }}
-          image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/0trust-labs/${{ env.LAB_SLUG }}:${{ github.sha }}
+          image: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/zerotrust-labs/${{ env.LAB_SLUG }}:${{ github.sha }}
