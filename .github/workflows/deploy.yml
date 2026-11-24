@@ -18,7 +18,7 @@ concurrency:
 env:
   LAB_SLUG: workforce-journey
   GCP_REGION: us-central1
-  CLOUD_RUN_SERVICE: 0trust-lab-workforce-journey
+  CLOUD_RUN_SERVICE: zerotrust-lab-workforce-journey
 
 jobs:
   deploy-pages:
