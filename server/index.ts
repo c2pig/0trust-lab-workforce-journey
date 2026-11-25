@@ -3,6 +3,7 @@ import { createCloudRunApp } from './app';
 
 const port = Number(process.env.PORT || 8080);
 const app = createCloudRunApp();
+const labName = process.env.LAB_SLUG || 'api';
 
 const server = serve(
   {
@@ -12,7 +13,7 @@ const server = serve(
   },
   (info) => {
     console.log(
-      `[0trust-lab-workforce-journey] Cloud Run API listening on http://0.0.0.0:${info.port}`
+      `[0trust-lab-${labName}] Cloud Run API listening on http://0.0.0.0:${info.port}`
     );
   }
 );

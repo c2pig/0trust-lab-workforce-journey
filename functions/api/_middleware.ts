@@ -1,19 +1,18 @@
-export interface EdgeMiddlewareEnv {
-  ENVIRONMENT?: string;
-  OTLP_ENDPOINT?: string;
-  OTLP_AUTH_HEADER?: string;
-  OTEL_SERVICE_NAME?: string;
-  LAB_SLUG?: string;
-}
+import {
+  buildResourceAttributes,
+  parseOrCreateTraceparent,
+  postOtlpPayload,
+  redactJwtSignatures,
+  sanitizeSessionId,
+  type OtlpEnv
+} from './_telemetry.ts';
+
+export type EdgeMiddlewareEnv = OtlpEnv;
+
+export { redactJwtSignatures };
 
 export function resolveServiceName(env: EdgeMiddlewareEnv): string {
   return env.OTEL_SERVICE_NAME || (env.LAB_SLUG ? `zerotrust-lab-${env.LAB_SLUG}` : '0trust-dev-edge');
-}
-
-function sanitizeSessionId(raw: string | null | undefined): string {
-  if (!raw || typeof raw !== 'string') return 'demo-visitor';
-  const cleaned = raw.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
-  return cleaned || 'demo-visitor';
 }
 
 export interface TelemetrySpanMetadata {
@@ -32,71 +31,10 @@ export interface TelemetrySpanMetadata {
   redaction_applied: boolean;
 }
 
-function randomHex(byteCount: number): string {
-  const bytes = new Uint8Array(byteCount);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function parseOrCreateTraceparent(incoming: string | null): {
-  traceparent: string;
-  traceId: string;
-  parentSpanId: string;
-  spanId: string;
+function mapStatusToSeverity(status: number): {
+  severityNumber: number;
+  severityText: 'ERROR' | 'WARN' | 'INFO';
 } {
-  const spanId = randomHex(8);
-  if (incoming) {
-    const match = incoming.trim().match(/^00-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/i);
-    if (match) {
-      const traceId = match[1].toLowerCase();
-      const parentSpanId = match[2].toLowerCase();
-      return {
-        traceparent: `00-${traceId}-${spanId}-01`,
-        traceId,
-        parentSpanId,
-        spanId
-      };
-    }
-  }
-  const traceId = randomHex(16);
-  return {
-    traceparent: `00-${traceId}-${spanId}-01`,
-    traceId,
-    parentSpanId: '0000000000000000',
-    spanId
-  };
-}
-
-export function redactJwtSignatures(input: string): { redacted: string; changed: boolean } {
-  let changed = false;
-  const redacted = input.replace(
-    /\b(eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.)([A-Za-z0-9_-]+)\b/g,
-    (_m, prefix) => {
-      changed = true;
-      return `${prefix}***REDACTED***`;
-    }
-  );
-  return { redacted, changed };
-}
-
-function buildOtlpHeaders(env: EdgeMiddlewareEnv): Record<string, string> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
-  };
-  if (env.OTLP_AUTH_HEADER) {
-    headers['Authorization'] = env.OTLP_AUTH_HEADER;
-  }
-  return headers;
-}
-
-function buildResourceAttributes(env: EdgeMiddlewareEnv) {
-  return [
-    { key: 'service.name', value: { stringValue: resolveServiceName(env) } },
-    { key: 'deployment.environment', value: { stringValue: env.ENVIRONMENT || 'production' } }
-  ];
-}
-
-function mapStatusToSeverity(status: number): { severityNumber: number; severityText: 'ERROR' | 'WARN' | 'INFO' } {
   if (status >= 500) {
     return { severityNumber: 17, severityText: 'ERROR' };
   }
@@ -113,13 +51,12 @@ async function exportOtlpTrace(
   endUnixNano: string
 ): Promise<void> {
   if (!env.OTLP_ENDPOINT) return;
-  const endpoint = env.OTLP_ENDPOINT.replace(/\/$/, '') + '/v1/traces';
 
   const otlpPayload = {
     resourceSpans: [
       {
         resource: {
-          attributes: buildResourceAttributes(env)
+          attributes: buildResourceAttributes(resolveServiceName(env), env.ENVIRONMENT)
         },
         scopeSpans: [
           {
@@ -153,15 +90,7 @@ async function exportOtlpTrace(
     ]
   };
 
-  try {
-    await fetch(endpoint, {
-      method: 'POST',
-      headers: buildOtlpHeaders(env),
-      body: JSON.stringify(otlpPayload)
-    });
-  } catch {
-    // Non-blocking best-effort OTLP export; never fail user request
-  }
+  await postOtlpPayload(env, '/v1/traces', otlpPayload);
 }
 
 async function exportOtlpLog(
@@ -170,7 +99,6 @@ async function exportOtlpLog(
   endUnixNano: string
 ): Promise<void> {
   if (!env.OTLP_ENDPOINT) return;
-  const endpoint = env.OTLP_ENDPOINT.replace(/\/$/, '') + '/v1/logs';
   const { severityNumber, severityText } = mapStatusToSeverity(telemetry.status);
 
   const rawBody = JSON.stringify({
@@ -191,7 +119,7 @@ async function exportOtlpLog(
     resourceLogs: [
       {
         resource: {
-          attributes: buildResourceAttributes(env)
+          attributes: buildResourceAttributes(resolveServiceName(env), env.ENVIRONMENT)
         },
         scopeLogs: [
           {
@@ -223,15 +151,7 @@ async function exportOtlpLog(
     ]
   };
 
-  try {
-    await fetch(endpoint, {
-      method: 'POST',
-      headers: buildOtlpHeaders(env),
-      body: JSON.stringify(otlpLogPayload)
-    });
-  } catch {
-    // Non-blocking best-effort OTLP export; never fail user request
-  }
+  await postOtlpPayload(env, '/v1/logs', otlpLogPayload);
 }
 
 export async function onRequest(context: {
@@ -260,7 +180,7 @@ export async function onRequest(context: {
     traceparent: traceInfo.traceparent,
     trace_id: traceInfo.traceId,
     span_id: traceInfo.spanId,
-    parent_span_id: traceInfo.parentSpanId,
+    parent_span_id: traceInfo.parentSpanId ?? '0000000000000000',
     session_id: sessionId,
     method: context.request.method,
     path: url.pathname,
