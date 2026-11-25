@@ -1,6 +1,9 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
-import { onRequest as observabilityMiddleware } from '../functions/api/_middleware';
+import {
+  onRequest as observabilityMiddleware,
+  type EdgeMiddlewareEnv
+} from '../functions/api/_middleware';
 import type { KVNamespace, WorkforceJourneyEnv } from '../functions/api/lib/idpAdapter';
 import { onRequestGet as configGet } from '../functions/api/workforce-journey/config';
 import { onRequestGet as entraCallbackGet } from '../functions/api/workforce-journey/entra/callback';
@@ -13,7 +16,7 @@ import { onRequestPost as protectedCallPost } from '../functions/api/workforce-j
 import { onRequestPost as requestJitPost } from '../functions/api/workforce-journey/request-jit';
 import { createKvAdapter } from './kvAdapter';
 
-export interface CloudRunEnv extends WorkforceJourneyEnv {
+export interface CloudRunEnv extends WorkforceJourneyEnv, EdgeMiddlewareEnv {
   LAB_SLUG?: string;
   LAB_ROUTER_SECRET?: string;
   FIRESTORE_COLLECTION?: string;
@@ -50,6 +53,7 @@ export function createCloudRunApp(options?: {
     LAB_ROUTER_SECRET: process.env.LAB_ROUTER_SECRET,
     FIRESTORE_COLLECTION: process.env.FIRESTORE_COLLECTION || 'kv_state',
     LAB1_JWT_SECRET: process.env.LAB1_JWT_SECRET,
+    OTEL_SERVICE_NAME: process.env.OTEL_SERVICE_NAME,
     OTLP_ENDPOINT: process.env.OTLP_ENDPOINT,
     OTLP_AUTH_HEADER: process.env.OTLP_AUTH_HEADER,
     ENTRA_EXT_TENANT_ID: process.env.ENTRA_EXT_TENANT_ID,
@@ -70,7 +74,7 @@ export function createCloudRunApp(options?: {
       collectionName: baseEnv.FIRESTORE_COLLECTION || 'kv_state'
     });
 
-  const runtimeEnv: WorkforceJourneyEnv = {
+  const runtimeEnv: CloudRunEnv = {
     ...baseEnv,
     STATE_KV: kv
   };

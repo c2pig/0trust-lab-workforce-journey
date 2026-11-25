@@ -274,6 +274,30 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
             </span>
           </span>
 
+          <a
+            href="https://0trust.dev/observability"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              backgroundColor: '#0f172a',
+              color: '#38bdf8',
+              border: '1px solid #334155',
+              borderRadius: '5px',
+              padding: '4px 8px',
+              fontSize: '11px',
+              fontWeight: 600,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap'
+            }}
+            title="Open Global Live Observability Dashboard on 0trust.dev"
+          >
+            <span>Global Live Dashboard ↗</span>
+          </a>
+
           {onClear && sortedSpans.length > 0 && (
             <button
               type="button"
