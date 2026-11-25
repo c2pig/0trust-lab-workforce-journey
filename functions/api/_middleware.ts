@@ -2,6 +2,12 @@ export interface EdgeMiddlewareEnv {
   ENVIRONMENT?: string;
   OTLP_ENDPOINT?: string;
   OTLP_AUTH_HEADER?: string;
+  OTEL_SERVICE_NAME?: string;
+  LAB_SLUG?: string;
+}
+
+export function resolveServiceName(env: EdgeMiddlewareEnv): string {
+  return env.OTEL_SERVICE_NAME || (env.LAB_SLUG ? `zerotrust-lab-${env.LAB_SLUG}` : '0trust-dev-edge');
 }
 
 function sanitizeSessionId(raw: string | null | undefined): string {
@@ -73,6 +79,33 @@ export function redactJwtSignatures(input: string): { redacted: string; changed:
   return { redacted, changed };
 }
 
+function buildOtlpHeaders(env: EdgeMiddlewareEnv): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  if (env.OTLP_AUTH_HEADER) {
+    headers['Authorization'] = env.OTLP_AUTH_HEADER;
+  }
+  return headers;
+}
+
+function buildResourceAttributes(env: EdgeMiddlewareEnv) {
+  return [
+    { key: 'service.name', value: { stringValue: resolveServiceName(env) } },
+    { key: 'deployment.environment', value: { stringValue: env.ENVIRONMENT || 'production' } }
+  ];
+}
+
+function mapStatusToSeverity(status: number): { severityNumber: number; severityText: 'ERROR' | 'WARN' | 'INFO' } {
+  if (status >= 500) {
+    return { severityNumber: 17, severityText: 'ERROR' };
+  }
+  if (status >= 400) {
+    return { severityNumber: 13, severityText: 'WARN' };
+  }
+  return { severityNumber: 9, severityText: 'INFO' };
+}
+
 async function exportOtlpTrace(
   env: EdgeMiddlewareEnv,
   telemetry: TelemetrySpanMetadata,
@@ -81,21 +114,12 @@ async function exportOtlpTrace(
 ): Promise<void> {
   if (!env.OTLP_ENDPOINT) return;
   const endpoint = env.OTLP_ENDPOINT.replace(/\/$/, '') + '/v1/traces';
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
-  };
-  if (env.OTLP_AUTH_HEADER) {
-    headers['Authorization'] = env.OTLP_AUTH_HEADER;
-  }
 
   const otlpPayload = {
     resourceSpans: [
       {
         resource: {
-          attributes: [
-            { key: 'service.name', value: { stringValue: '0trust-dev-edge' } },
-            { key: 'deployment.environment', value: { stringValue: env.ENVIRONMENT || 'production' } }
-          ]
+          attributes: buildResourceAttributes(env)
         },
         scopeSpans: [
           {
@@ -117,7 +141,8 @@ async function exportOtlpTrace(
                   { key: 'http.target', value: { stringValue: telemetry.path } },
                   { key: 'http.status_code', value: { intValue: telemetry.status } },
                   { key: '0trust.session_id', value: { stringValue: telemetry.session_id } },
-                  { key: '0trust.latency_ms', value: { intValue: telemetry.latency_ms } }
+                  { key: '0trust.latency_ms', value: { intValue: telemetry.latency_ms } },
+                  { key: '0trust.redaction_applied', value: { boolValue: telemetry.redaction_applied } }
                 ],
                 status: { code: telemetry.status >= 500 ? 2 : 1 }
               }
@@ -131,8 +156,78 @@ async function exportOtlpTrace(
   try {
     await fetch(endpoint, {
       method: 'POST',
-      headers,
+      headers: buildOtlpHeaders(env),
       body: JSON.stringify(otlpPayload)
+    });
+  } catch {
+    // Non-blocking best-effort OTLP export; never fail user request
+  }
+}
+
+async function exportOtlpLog(
+  env: EdgeMiddlewareEnv,
+  telemetry: TelemetrySpanMetadata,
+  endUnixNano: string
+): Promise<void> {
+  if (!env.OTLP_ENDPOINT) return;
+  const endpoint = env.OTLP_ENDPOINT.replace(/\/$/, '') + '/v1/logs';
+  const { severityNumber, severityText } = mapStatusToSeverity(telemetry.status);
+
+  const rawBody = JSON.stringify({
+    message: `${telemetry.method} ${telemetry.path} -> ${telemetry.status} (${telemetry.latency_ms}ms)`,
+    session_id: telemetry.session_id,
+    method: telemetry.method,
+    path: telemetry.path,
+    status: telemetry.status,
+    latency_ms: telemetry.latency_ms,
+    redaction_applied: telemetry.redaction_applied,
+    trace_id: telemetry.trace_id,
+    span_id: telemetry.span_id
+  });
+  const bodyRedaction = redactJwtSignatures(rawBody);
+  const redactionApplied = telemetry.redaction_applied || bodyRedaction.changed;
+
+  const otlpLogPayload = {
+    resourceLogs: [
+      {
+        resource: {
+          attributes: buildResourceAttributes(env)
+        },
+        scopeLogs: [
+          {
+            scope: { name: 'functions/api/_middleware.ts', version: '1.0.0' },
+            logRecords: [
+              {
+                timeUnixNano: endUnixNano,
+                observedTimeUnixNano: endUnixNano,
+                severityNumber,
+                severityText,
+                traceId: telemetry.trace_id,
+                spanId: telemetry.span_id,
+                body: { stringValue: bodyRedaction.redacted },
+                attributes: [
+                  { key: '0trust.session_id', value: { stringValue: telemetry.session_id } },
+                  { key: 'http.method', value: { stringValue: telemetry.method } },
+                  { key: 'http.target', value: { stringValue: telemetry.path } },
+                  { key: 'http.status_code', value: { intValue: telemetry.status } },
+                  { key: '0trust.latency_ms', value: { intValue: telemetry.latency_ms } },
+                  { key: '0trust.redaction_applied', value: { boolValue: redactionApplied } },
+                  { key: 'trace_id', value: { stringValue: telemetry.trace_id } },
+                  { key: 'span_id', value: { stringValue: telemetry.span_id } }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  try {
+    await fetch(endpoint, {
+      method: 'POST',
+      headers: buildOtlpHeaders(env),
+      body: JSON.stringify(otlpLogPayload)
     });
   } catch {
     // Non-blocking best-effort OTLP export; never fail user request
@@ -180,7 +275,12 @@ export async function onRequest(context: {
   if (context.env.OTLP_ENDPOINT && typeof context.waitUntil === 'function') {
     const startNano = `${startMs}000000`;
     const endNano = `${endMs}000000`;
-    context.waitUntil(exportOtlpTrace(context.env, telemetry, startNano, endNano));
+    context.waitUntil(
+      Promise.allSettled([
+        exportOtlpTrace(context.env, telemetry, startNano, endNano),
+        exportOtlpLog(context.env, telemetry, endNano)
+      ])
+    );
   }
 
   const contentType = response.headers.get('Content-Type') || '';
