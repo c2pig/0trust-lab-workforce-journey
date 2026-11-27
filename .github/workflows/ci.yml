@@ -41,12 +41,12 @@ jobs:
         run: npm run build
 
   terraform-validate:
-    name: Terraform Format & Validate
+    name: Terraform Validate
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-      - name: Checkout 0trust-lab-workforce-journey
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -57,8 +57,22 @@ jobs:
       - name: Terraform Format Check
         run: terraform -chdir=infra/terraform fmt -check
 
-      - name: Terraform Init (No Backend)
-        run: terraform -chdir=infra/terraform init -backend=false -input=false
+      - name: Verify Immutable Module Pinning & GCS Backend
+        run: |
+          if grep -q '?ref=main' infra/terraform/main.tf; then
+            echo "::error::Mutable ?ref=main module reference found in infra/terraform/main.tf"
+            exit 1
+          fi
+          grep -q 'backend "gcs"' infra/terraform/backend.tf
 
-      - name: Terraform Validate
-        run: terraform -chdir=infra/terraform validate
+      - name: Terraform Init & Validate
+        env:
+          MANAGED_INFRA_READ_TOKEN: ${{ secrets.MANAGED_INFRA_READ_TOKEN }}
+        run: |
+          if [ -n "$MANAGED_INFRA_READ_TOKEN" ]; then
+            git config --global url."https://x-access-token:${MANAGED_INFRA_READ_TOKEN}@github.com/c2pig/managed-infrastructure.git".insteadOf "https://github.com/c2pig/managed-infrastructure.git"
+            terraform -chdir=infra/terraform init -backend=false -input=false
+            terraform -chdir=infra/terraform validate
+          else
+            echo "::notice::MANAGED_INFRA_READ_TOKEN is not set; skipping private module download for c2pig/managed-infrastructure. Add a fine-grained contents:read PAT secret to enable full terraform validate in CI."
+          fi
