@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import {
+  signWorkforceJourneyJwt,
+  verifyWorkforceJourneyJwt,
+  type WorkforceJourneyJwtPayload
+} from '../functions/api/lib/workforceJourneyCrypto';
 import { createCloudRunApp, verifyRouterSecret } from '../server/app';
 import {
   buildKvDocId,
@@ -191,12 +196,22 @@ describe('Lab 1 Cloud Run Adapter — Red-Team & Security Invariants', () => {
       'https://lab.0trust.dev/api/workforce-journey/entra/callback'
     );
     const state = authUrl.searchParams.get('state');
+    const nonce = authUrl.searchParams.get('nonce');
     assert.ok(state);
+    assert.ok(nonce);
 
     // 2. entra/callback behind lab-router (mock Entra token endpoint)
     const originalFetch = globalThis.fetch;
     const mockIdPayload = Buffer.from(
-      JSON.stringify({ oid: 'oid-999', email: 'visitor@example.com', name: 'Visitor' })
+      JSON.stringify({
+        iss: 'https://demo.ciamlogin.com/00000000-0000-0000-0000-000000000001/v2.0',
+        aud: 'client-123',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        nonce,
+        oid: 'oid-999',
+        email: 'visitor@example.com',
+        name: 'Visitor'
+      })
     ).toString('base64url');
     const mockIdToken = `eyJhbGciOiJSUzI1NiJ9.${mockIdPayload}.mock-sig`;
 
@@ -223,10 +238,41 @@ describe('Lab 1 Cloud Run Adapter — Red-Team & Security Invariants', () => {
       assert.equal(cbRes.status, 302);
       const finalLocation = cbRes.headers.get('location');
       assert.ok(finalLocation);
-      assert.ok(
-        finalLocation.startsWith('https://lab.0trust.dev/workforce-journey?'),
-        `Expected redirect to https://lab.0trust.dev/workforce-journey?..., got ${finalLocation}`
+      assert.equal(finalLocation, 'https://lab.0trust.dev/workforce-journey?entra_auth=1');
+      assert.ok(!finalLocation.includes('entra_ticket'));
+      assert.ok(!finalLocation.includes('oid='));
+      assert.ok(!finalLocation.includes('email='));
+
+      const setCookie = cbRes.headers.get('set-cookie') || '';
+      assert.ok(setCookie.includes('lab1_entra_ticket='));
+      assert.ok(setCookie.includes('HttpOnly'));
+      assert.ok(setCookie.includes('SameSite=Lax'));
+      assert.ok(setCookie.includes('Secure'));
+      const ticketMatch = setCookie.match(/lab1_entra_ticket=([^;]+)/);
+      assert.ok(ticketMatch);
+
+      // 3. GET /api/workforce-journey/entra/session resolves identity from HttpOnly cookie
+      const sessionRes = await app.request(
+        'https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/entra/session',
+        {
+          headers: {
+            'x-lab-router-secret': TEST_ROUTER_SECRET,
+            cookie: `lab1_entra_ticket=${ticketMatch[1]}`
+          }
+        }
       );
+      assert.equal(sessionRes.status, 200);
+      const sessionJson = (await sessionRes.json()) as {
+        authenticated: boolean;
+        oid: string;
+        email: string;
+        name: string;
+      };
+      assert.equal(sessionJson.authenticated, true);
+      assert.equal(sessionJson.oid, 'oid-999');
+      assert.equal(sessionJson.email, 'visitor@example.com');
+      assert.equal(sessionJson.name, 'Visitor');
+
       assert.ok(
         capturedTokenBody.includes(
           encodeURIComponent('https://lab.0trust.dev/api/workforce-journey/entra/callback')
@@ -360,9 +406,14 @@ describe('Lab 1 Cloud Run Adapter — Red-Team & Security Invariants', () => {
       body: JSON.stringify({ personaId: 'maya-lin', roles: ['Payment Creator'] })
     });
     assert.equal(provRes.status, 200);
-    const provData = (await provRes.json()) as { session_jwt: string; status: string };
+    const provData = (await provRes.json()) as {
+      session_jwt: string;
+      approver_jwt: string;
+      status: string;
+    };
     assert.equal(provData.status, 'PROVISIONED');
     assert.ok(provData.session_jwt);
+    assert.ok(provData.approver_jwt);
 
     // 2. Submit JIT request
     const submitRes = await app.request('http://127.0.0.1:8080/api/workforce-journey/jit-submit', {
@@ -378,10 +429,14 @@ describe('Lab 1 Cloud Run Adapter — Red-Team & Security Invariants', () => {
     const submitData = (await submitRes.json()) as { request_id: string };
     assert.ok(submitData.request_id);
 
-    // 3. Approve JIT request
+    // 3. Approve JIT request with Marcus's signed approver_jwt
     const decideRes = await app.request('http://127.0.0.1:8080/api/workforce-journey/jit-decision', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Session-Id': sessionId },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Session-Id': sessionId,
+        Authorization: `Bearer ${provData.approver_jwt}`
+      },
       body: JSON.stringify({
         request_id: submitData.request_id,
         decision: 'approve',
@@ -435,5 +490,227 @@ describe('Lab 1 Cloud Run Adapter — Red-Team & Security Invariants', () => {
     assert.equal(revokedCallRes.status, 401);
     const revokedData = (await revokedCallRes.json()) as { error: string };
     assert.equal(revokedData.error, 'TOKEN_REVOKED');
+  });
+
+  it('fails closed in production when LAB1_JWT_SECRET is missing/short and rejects alg:none or expired JWTs', async () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const payload: WorkforceJourneyJwtPayload = {
+      iss: 'https://iam.0trust.dev',
+      sub: 'maya-lin',
+      email: 'maya.lin@acme-corp.io',
+      name: 'Maya Lin',
+      department: 'Finance Operations',
+      roles: ['Payment Creator'],
+      scope: 'session:base',
+      token_type: 'session',
+      jti: 'sess_test_1',
+      sid: 'sid-1',
+      iat: nowSec - 10,
+      exp: nowSec + 3600
+    };
+
+    await assert.rejects(
+      () => signWorkforceJourneyJwt(payload, undefined, 'production'),
+      /LAB1_JWT_SECRET/
+    );
+    await assert.rejects(
+      () => signWorkforceJourneyJwt(payload, 'short-secret', 'production'),
+      /LAB1_JWT_SECRET/
+    );
+    await assert.rejects(
+      () => verifyWorkforceJourneyJwt('a.b.c', 'short-secret', 'production'),
+      /LAB1_JWT_SECRET/
+    );
+
+    const algNoneHeader = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+    const validPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const algNoneRes = await verifyWorkforceJourneyJwt(`${algNoneHeader}.${validPayload}.`, undefined, 'development');
+    assert.equal(algNoneRes.valid, false);
+
+    const expiredSigned = await signWorkforceJourneyJwt(
+      { ...payload, exp: nowSec - 5 },
+      'test-secret-0123456789',
+      'production'
+    );
+    const expiredRes = await verifyWorkforceJourneyJwt(
+      expiredSigned.token,
+      'test-secret-0123456789',
+      'production'
+    );
+    assert.equal(expiredRes.valid, false);
+    assert.equal(expiredRes.expired, true);
+  });
+
+  it('enforces Approver JWT AuthN/AuthZ and self-approval guard on jit-decision and AuthN on logout', async () => {
+    const kv = new MemoryKvAdapter({ labSlug: 'workforce-journey' });
+    const jwtSecret = 'test-lab1-jwt-secret-0123456789';
+    const app = createCloudRunApp({
+      env: {
+        ENVIRONMENT: 'production',
+        LAB_SLUG: 'workforce-journey',
+        LAB_ROUTER_SECRET: TEST_ROUTER_SECRET,
+        LAB1_JWT_SECRET: jwtSecret
+      },
+      kv
+    });
+
+    const sessionId = 'neg-sec-session';
+    const headersBase = {
+      'Content-Type': 'application/json',
+      'X-Session-Id': sessionId,
+      'x-lab-router-secret': TEST_ROUTER_SECRET
+    };
+
+    const provRes = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/login-provision', {
+      method: 'POST',
+      headers: headersBase,
+      body: JSON.stringify({ personaId: 'maya-lin', roles: ['Payment Creator'] })
+    });
+    assert.equal(provRes.status, 200);
+    const provData = (await provRes.json()) as { session_jwt: string; approver_jwt: string };
+
+    const submitRes = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/jit-submit', {
+      method: 'POST',
+      headers: { ...headersBase, Authorization: `Bearer ${provData.session_jwt}` },
+      body: JSON.stringify({ ttl_seconds: 900, justification: 'Security test' })
+    });
+    assert.equal(submitRes.status, 201);
+    const submitData = (await submitRes.json()) as { request_id: string };
+
+    // 1. jit-decision without Authorization -> 401 MISSING_APPROVER_TOKEN
+    const noAuthDecide = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/jit-decision', {
+      method: 'POST',
+      headers: headersBase,
+      body: JSON.stringify({ request_id: submitData.request_id, decision: 'approve' })
+    });
+    assert.equal(noAuthDecide.status, 401);
+    assert.equal(((await noAuthDecide.json()) as { error: string }).error, 'MISSING_APPROVER_TOKEN');
+
+    // 2. jit-decision with forged JWT -> 401 INVALID_APPROVER_TOKEN
+    const forgedDecide = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/jit-decision', {
+      method: 'POST',
+      headers: { ...headersBase, Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.forged' },
+      body: JSON.stringify({ request_id: submitData.request_id, decision: 'approve' })
+    });
+    assert.equal(forgedDecide.status, 401);
+    assert.equal(((await forgedDecide.json()) as { error: string }).error, 'INVALID_APPROVER_TOKEN');
+
+    // 3. jit-decision with Maya's Payment Creator JWT -> 403 APPROVER_ROLE_REQUIRED
+    const wrongRoleDecide = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/jit-decision', {
+      method: 'POST',
+      headers: { ...headersBase, Authorization: `Bearer ${provData.session_jwt}` },
+      body: JSON.stringify({ request_id: submitData.request_id, decision: 'approve' })
+    });
+    assert.equal(wrongRoleDecide.status, 403);
+    assert.equal(((await wrongRoleDecide.json()) as { error: string }).error, 'APPROVER_ROLE_REQUIRED');
+
+    // 4. jit-decision with self-approval JWT (claims.email === maya.lin@acme-corp.io, even with Audit Approver role) -> 403 SELF_APPROVAL_FORBIDDEN
+    const nowSec = Math.floor(Date.now() / 1000);
+    const selfApproverJwt = await signWorkforceJourneyJwt(
+      {
+        iss: 'https://iam.0trust.dev',
+        sub: 'maya-lin',
+        email: 'maya.lin@acme-corp.io',
+        name: 'Maya Lin',
+        department: 'Finance Operations',
+        roles: ['Audit Approver'],
+        scope: 'pam:approve',
+        token_type: 'session',
+        jti: 'apprv_self_1',
+        sid: sessionId,
+        iat: nowSec,
+        exp: nowSec + 3600
+      },
+      jwtSecret,
+      'production'
+    );
+    const selfApproveDecide = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/jit-decision', {
+      method: 'POST',
+      headers: { ...headersBase, Authorization: `Bearer ${selfApproverJwt.token}` },
+      body: JSON.stringify({
+        request_id: submitData.request_id,
+        decision: 'approve',
+        approver: { email: 'marcus.chen@acme-corp.io', name: 'Spoofed' }
+      })
+    });
+    assert.equal(selfApproveDecide.status, 403);
+    assert.equal(((await selfApproveDecide.json()) as { error: string }).error, 'SELF_APPROVAL_FORBIDDEN');
+
+    // 5. logout without Authorization -> 401 MISSING_SESSION_TOKEN
+    const noAuthLogout = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/logout', {
+      method: 'POST',
+      headers: headersBase,
+      body: JSON.stringify({})
+    });
+    assert.equal(noAuthLogout.status, 401);
+    assert.equal(((await noAuthLogout.json()) as { error: string }).error, 'MISSING_SESSION_TOKEN');
+
+    // 6. logout with forged JWT -> 401 INVALID_SESSION_TOKEN & session remains ACTIVE
+    const forgedLogout = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/logout', {
+      method: 'POST',
+      headers: { ...headersBase, Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.forged' },
+      body: JSON.stringify({})
+    });
+    assert.equal(forgedLogout.status, 401);
+    assert.equal(((await forgedLogout.json()) as { error: string }).error, 'INVALID_SESSION_TOKEN');
+
+    // Verify session was NOT revoked (jit-decision with valid approver_jwt still succeeds)
+    const validDecide = await app.request('https://0trust-lab-workforce-journey-abc.run.app/api/workforce-journey/jit-decision', {
+      method: 'POST',
+      headers: { ...headersBase, Authorization: `Bearer ${provData.approver_jwt}` },
+      body: JSON.stringify({ request_id: submitData.request_id, decision: 'approve' })
+    });
+    assert.equal(validDecide.status, 200);
+  });
+
+  it('rejects oversized (>64 KB) JSON bodies with 413 PAYLOAD_TOO_LARGE across all 6 POST routes', async () => {
+    const kv = new MemoryKvAdapter({ labSlug: 'workforce-journey' });
+    const app = createCloudRunApp({
+      env: {
+        ENVIRONMENT: 'development',
+        LAB_SLUG: 'workforce-journey'
+      },
+      kv
+    });
+
+    const oversizedBody = JSON.stringify({ padding: 'x'.repeat(65 * 1024) });
+    const routes = [
+      '/api/workforce-journey/login-provision',
+      '/api/workforce-journey/jit-submit',
+      '/api/workforce-journey/jit-decision',
+      '/api/workforce-journey/request-jit',
+      '/api/workforce-journey/protected-call',
+      '/api/workforce-journey/logout'
+    ];
+
+    for (const route of routes) {
+      const res = await app.request(`http://127.0.0.1:8080${route}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer dummy.jwt.token'
+        },
+        body: oversizedBody
+      });
+      assert.equal(res.status, 413, `Expected 413 for ${route}, got ${res.status}`);
+      const json = (await res.json()) as { error: string };
+      assert.equal(json.error, 'PAYLOAD_TOO_LARGE');
+    }
+  });
+
+  it('returns 401 ENTRA_OIDC_REQUIRED on GET /entra/session when cookie is missing', async () => {
+    const kv = new MemoryKvAdapter({ labSlug: 'workforce-journey' });
+    const app = createCloudRunApp({
+      env: {
+        ENVIRONMENT: 'development',
+        LAB_SLUG: 'workforce-journey'
+      },
+      kv
+    });
+
+    const res = await app.request('http://127.0.0.1:8080/api/workforce-journey/entra/session');
+    assert.equal(res.status, 401);
+    const json = (await res.json()) as { error: string };
+    assert.equal(json.error, 'ENTRA_OIDC_REQUIRED');
   });
 });

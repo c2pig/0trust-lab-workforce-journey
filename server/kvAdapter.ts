@@ -67,7 +67,11 @@ export class FirestoreKvAdapter implements KVNamespace {
       return null;
     }
     // Synchronous TTL check: never rely on Firestore's eventual background TTL reaper
-    if (doc.expireAt && doc.expireAt.toMillis() <= this.nowFn()) {
+    if (
+      doc.expireAt &&
+      typeof doc.expireAt.toMillis === 'function' &&
+      doc.expireAt.toMillis() <= this.nowFn()
+    ) {
       return null;
     }
     return typeof doc.value === 'string' ? doc.value : null;
@@ -107,14 +111,29 @@ interface MemoryKvEntry {
   labSlug: string;
 }
 
+const DEFAULT_MEMORY_KV_MAX_ENTRIES = 2000;
+
 export class MemoryKvAdapter implements KVNamespace {
   private readonly store = new Map<string, MemoryKvEntry>();
   private readonly labSlug: string;
   private readonly nowFn: () => number;
+  private readonly maxEntries: number;
 
-  constructor(options: { labSlug: string; nowFn?: () => number }) {
+  constructor(options: { labSlug: string; nowFn?: () => number; maxEntries?: number }) {
     this.labSlug = options.labSlug;
     this.nowFn = options.nowFn ?? (() => Date.now());
+    this.maxEntries =
+      typeof options.maxEntries === 'number' && options.maxEntries > 0
+        ? Math.floor(options.maxEntries)
+        : DEFAULT_MEMORY_KV_MAX_ENTRIES;
+  }
+
+  private evictExpired(nowMs: number): void {
+    for (const [key, entry] of this.store.entries()) {
+      if (entry.expireAtMs !== null && entry.expireAtMs <= nowMs) {
+        this.store.delete(key);
+      }
+    }
   }
 
   async get(key: string): Promise<string | null> {
@@ -142,6 +161,17 @@ export class MemoryKvAdapter implements KVNamespace {
       typeof ttlSeconds === 'number' && Number.isFinite(ttlSeconds) && ttlSeconds > 0
         ? nowMs + Math.floor(ttlSeconds * 1000)
         : null;
+
+    if (this.store.has(docId)) {
+      this.store.delete(docId);
+    } else if (this.store.size >= this.maxEntries) {
+      this.evictExpired(nowMs);
+      while (this.store.size >= this.maxEntries) {
+        const oldestKey = this.store.keys().next().value;
+        if (oldestKey === undefined) break;
+        this.store.delete(oldestKey);
+      }
+    }
 
     this.store.set(docId, {
       value,

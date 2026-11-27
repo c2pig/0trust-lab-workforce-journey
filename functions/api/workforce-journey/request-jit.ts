@@ -1,6 +1,7 @@
 import { createIdpAdapter, type WorkforceJourneyEnv } from '../lib/idpAdapter';
 import {
   extractBearerToken,
+  parseJsonBodyWithLimit,
   sanitizeSessionId,
   signWorkforceJourneyJwt,
   verifyWorkforceJourneyJwt,
@@ -32,26 +33,33 @@ export async function onRequestPost(context: {
     );
   }
 
-  let body: {
+  const parsedBody = await parseJsonBodyWithLimit<{
     justification?: string;
     ttl_seconds?: number;
     sessionId?: string;
     mode?: 'sandbox' | 'entra-external-id';
-  } = {};
-  try {
-    body = (await context.request.json()) as {
-      justification?: string;
-      ttl_seconds?: number;
-      sessionId?: string;
-      mode?: 'sandbox' | 'entra-external-id';
-    };
-  } catch {
-    // Allow empty JSON body
+  }>(context.request, { allowEmpty: true });
+  if (!parsedBody.ok) {
+    return jsonResponse({ error: parsedBody.error, message: parsedBody.message }, parsedBody.status);
   }
+  const body = parsedBody.body;
 
   // 1. Verify Presented Session JWT
-  const verified = await verifyWorkforceJourneyJwt(token, context.env.LAB1_JWT_SECRET);
+  const verified = await verifyWorkforceJourneyJwt(
+    token,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
   if (!verified.valid || !verified.decoded) {
+    if (verified.expired) {
+      return jsonResponse(
+        {
+          error: 'SESSION_EXPIRED',
+          message: 'Session token has expired. Re-provision in Step 1.'
+        },
+        401
+      );
+    }
     return jsonResponse(
       {
         error: 'INVALID_SESSION_TOKEN',
@@ -150,7 +158,11 @@ export async function onRequestPost(context: {
     exp: nowSec + clampedTtl
   };
 
-  const signedJit = await signWorkforceJourneyJwt(jitPayload, context.env.LAB1_JWT_SECRET);
+  const signedJit = await signWorkforceJourneyJwt(
+    jitPayload,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
 
   return jsonResponse({
     status: 'JIT_GRANTED',

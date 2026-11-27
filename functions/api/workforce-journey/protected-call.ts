@@ -1,6 +1,7 @@
 import { createIdpAdapter, type WorkforceJourneyEnv } from '../lib/idpAdapter';
 import {
   extractBearerToken,
+  parseJsonBodyWithLimit,
   sanitizeSessionId,
   verifyWorkforceJourneyJwt
 } from '../lib/workforceJourneyCrypto';
@@ -53,22 +54,16 @@ export async function onRequestPost(context: {
     );
   }
 
-  let body: {
+  const parsedBody = await parseJsonBodyWithLimit<{
     action?: string;
     target_endpoint?: TargetEndpoint;
     simulate_expired?: boolean;
     sessionId?: string;
-  } = {};
-  try {
-    body = (await context.request.json()) as {
-      action?: string;
-      target_endpoint?: TargetEndpoint;
-      simulate_expired?: boolean;
-      sessionId?: string;
-    };
-  } catch {
-    // Optional JSON body
+  }>(context.request, { allowEmpty: true });
+  if (!parsedBody.ok) {
+    return jsonResponse({ error: parsedBody.error, message: parsedBody.message }, parsedBody.status);
   }
+  const body = parsedBody.body;
 
   const endpointKey: TargetEndpoint =
     body.target_endpoint && body.target_endpoint in ENDPOINT_RULES
@@ -77,8 +72,23 @@ export async function onRequestPost(context: {
   const rule = ENDPOINT_RULES[endpointKey];
 
   // 1. Validate JWT signature
-  const verified = await verifyWorkforceJourneyJwt(token, context.env.LAB1_JWT_SECRET);
+  const verified = await verifyWorkforceJourneyJwt(
+    token,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
   if (!verified.valid || !verified.decoded) {
+    if (verified.expired) {
+      return jsonResponse(
+        {
+          error: 'TOKEN_EXPIRED',
+          resource: rule.resource,
+          jti: verified.decoded?.payload.jti,
+          message: 'HTTP 401 Expired: 15-minute JIT elevation window has elapsed.'
+        },
+        401
+      );
+    }
     return jsonResponse(
       {
         error: 'INVALID_TOKEN',

@@ -3,6 +3,7 @@ import type { WorkforceJourneyEnv } from '../functions/api/lib/idpAdapter';
 import { onRequestGet as configGet } from '../functions/api/workforce-journey/config';
 import { onRequestGet as entraCallbackGet } from '../functions/api/workforce-journey/entra/callback';
 import { onRequestGet as entraLoginGet } from '../functions/api/workforce-journey/entra/login';
+import { onRequestGet as entraSessionGet } from '../functions/api/workforce-journey/entra/session';
 import { onRequestPost as jitDecisionPost } from '../functions/api/workforce-journey/jit-decision';
 import { onRequestPost as jitSubmitPost } from '../functions/api/workforce-journey/jit-submit';
 import { onRequestPost as loginProvisionPost } from '../functions/api/workforce-journey/login-provision';
@@ -44,6 +45,7 @@ export function createCloudRunApp(options?: {
       app.post('/api/workforce-journey/logout', wrap(logoutPost));
       app.get('/api/workforce-journey/entra/login', wrap(entraLoginGet));
       app.get('/api/workforce-journey/entra/callback', wrap(entraCallbackGet));
+      app.get('/api/workforce-journey/entra/session', wrap(entraSessionGet));
     }
   });
 }

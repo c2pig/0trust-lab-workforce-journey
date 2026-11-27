@@ -1,4 +1,4 @@
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import {
   onRequest as observabilityMiddleware,
@@ -39,12 +39,9 @@ export function verifyRouterSecret(
   if (!provided || !expected) {
     return false;
   }
-  const providedBuf = Buffer.from(provided, 'utf8');
-  const expectedBuf = Buffer.from(expected, 'utf8');
-  if (providedBuf.length !== expectedBuf.length) {
-    return false;
-  }
-  return timingSafeEqual(providedBuf, expectedBuf);
+  const providedDigest = createHash('sha256').update(provided, 'utf8').digest();
+  const expectedDigest = createHash('sha256').update(expected, 'utf8').digest();
+  return timingSafeEqual(providedDigest, expectedDigest);
 }
 
 export function createBaseLabApp<TEnv extends BaseCloudRunEnv = BaseCloudRunEnv>(
@@ -90,9 +87,11 @@ export function createBaseLabApp<TEnv extends BaseCloudRunEnv = BaseCloudRunEnv>
 
   // Fail-closed constant-time X-Lab-Router-Secret validation on all /api/* routes
   app.use('/api/*', async (c, next) => {
-    const isProduction = baseEnv.ENVIRONMENT === 'production';
     const expectedSecret = baseEnv.LAB_ROUTER_SECRET;
-    const mustEnforce = isProduction || Boolean(expectedSecret);
+    const mustEnforce =
+      Boolean(process.env.K_SERVICE) ||
+      baseEnv.ENVIRONMENT !== 'development' ||
+      Boolean(expectedSecret);
 
     if (mustEnforce) {
       const providedSecret = c.req.header('x-lab-router-secret');
@@ -106,16 +105,35 @@ export function createBaseLabApp<TEnv extends BaseCloudRunEnv = BaseCloudRunEnv>
 
   const wrap = (handler: PagesHandler<TEnv>): WrappedRouteHandler => {
     return async (c: { req: { raw: Request } }): Promise<Response> => {
-      return observabilityMiddleware({
+      const pendingExports: Promise<unknown>[] = [];
+      const response = await observabilityMiddleware({
         request: c.req.raw,
         env: runtimeEnv,
         next: () => handler({ request: c.req.raw, env: runtimeEnv }),
         waitUntil: (promise: Promise<unknown>) => {
-          promise.catch(() => {
-            // Non-blocking background OTLP export; never crash request or process
-          });
+          pendingExports.push(
+            promise.catch(() => {
+              // Non-blocking background OTLP export; never crash request or process
+            })
+          );
         }
       });
+
+      // Cloud Run throttles CPU after response unless background OTLP exports are boundedly flushed
+      if (pendingExports.length > 0 && runtimeEnv.OTLP_ENDPOINT) {
+        const parsedFlushMs = Number(process.env.OTLP_FLUSH_TIMEOUT_MS || 300);
+        const flushTimeoutMs =
+          Number.isFinite(parsedFlushMs) && parsedFlushMs > 0 ? parsedFlushMs : 300;
+        await Promise.race([
+          Promise.allSettled(pendingExports),
+          new Promise<void>((resolve) => {
+            const timer = setTimeout(resolve, flushTimeoutMs);
+            timer.unref?.();
+          })
+        ]);
+      }
+
+      return response;
     };
   };
 
