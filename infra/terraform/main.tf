@@ -7,7 +7,7 @@ provider "google" {
 
 module "entra_external_ciam" {
   count  = var.enable_entra_ciam ? 1 : 0
-  source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/entra-external-ciam?ref=main"
+  source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/entra-external-ciam?ref=v1.0.0"
 
   tenant_id        = var.entra_ext_tenant_id
   tenant_subdomain = var.entra_ext_tenant_subdomain
@@ -15,7 +15,7 @@ module "entra_external_ciam" {
 
 # Static SPA hosting only (dist/); API traffic is routed by 0trust-lab-router to Cloud Run.
 module "cloudflare_pages_lab" {
-  source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/cloudflare-pages-lab?ref=main"
+  source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/cloudflare-pages-lab?ref=v1.0.0"
 
   cloudflare_account_id = var.cloudflare_account_id
   cloudflare_zone_id    = var.cloudflare_zone_id
@@ -32,7 +32,7 @@ module "cloudflare_pages_lab" {
 
 # Cloud Run API backend + Firestore Native state (min_instance_count = 0, $0 idle cost).
 module "cloud_run_lab" {
-  source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/cloud-run-lab?ref=main"
+  source = "git::https://github.com/c2pig/managed-infrastructure.git//modules/cloud-run-lab?ref=v1.0.0"
 
   gcp_project_id                 = var.gcp_project_id
   gcp_region                     = var.gcp_region

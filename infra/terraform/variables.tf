@@ -27,7 +27,7 @@ variable "gcp_region" {
 
 variable "cloud_run_image" {
   type        = string
-  description = "Container image URI in Artifact Registry (e.g. us-central1-docker.pkg.dev/<project>/0trust-labs/workforce-journey:latest)."
+  description = "Container image URI in Artifact Registry (e.g. us-central1-docker.pkg.dev/<project>/zerotrust-labs/workforce-journey:latest)."
 }
 
 variable "firestore_collection" {
