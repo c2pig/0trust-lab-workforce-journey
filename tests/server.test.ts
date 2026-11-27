@@ -713,4 +713,29 @@ describe('Lab 1 Cloud Run Adapter — Red-Team & Security Invariants', () => {
     const json = (await res.json()) as { error: string };
     assert.equal(json.error, 'ENTRA_OIDC_REQUIRED');
   });
+
+  it('fails closed with 400 on malformed JSON or missing session_id', async () => {
+    const kv = new MemoryKvAdapter({ labSlug: 'workforce-journey' });
+    const app = createCloudRunApp({
+      env: {
+        ENVIRONMENT: 'development',
+        LAB_SLUG: 'workforce-journey'
+      },
+      kv
+    });
+
+    const malformedRes = await app.request('http://127.0.0.1:8080/api/workforce-journey/login-provision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{invalid-json'
+    });
+    assert.equal(malformedRes.status, 400);
+
+    const missingSidRes = await app.request('http://127.0.0.1:8080/api/workforce-journey/login-provision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ persona: 'alice' })
+    });
+    assert.equal(missingSidRes.status, 400);
+  });
 });

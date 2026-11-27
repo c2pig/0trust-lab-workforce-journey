@@ -110,12 +110,12 @@ export async function fetchWorkforceJourneyConfig(): Promise<WorkforceJourneyCon
         edgeApiAvailable = true;
         return (await res.json()) as WorkforceJourneyConfig;
       }
-      if (typeof window !== 'undefined') {
+      if (typeof (globalThis as { window?: unknown }).window !== 'undefined') {
         edgeApiAvailable = false;
       }
     } catch {
       // Fallback when running static Vite dev
-      if (typeof window !== 'undefined') {
+      if (typeof (globalThis as { window?: unknown }).window !== 'undefined') {
         edgeApiAvailable = false;
       }
     }
@@ -1087,13 +1087,13 @@ export async function callWorkforceJourneyApi<T = Record<string, unknown>>(
     headers['Authorization'] = `Bearer ${options.bearerToken.trim()}`;
   }
 
-  if (typeof window !== 'undefined' && edgeApiAvailable === null && edgeConfigProbePromise) {
+  if (typeof (globalThis as { window?: unknown }).window !== 'undefined' && edgeApiAvailable === null && edgeConfigProbePromise) {
     await edgeConfigProbePromise;
   }
 
   const start = performance.now();
 
-  if (!(typeof window !== 'undefined' && edgeApiAvailable === false)) {
+  if (!(typeof (globalThis as { window?: unknown }).window !== 'undefined' && edgeApiAvailable === false)) {
     try {
       const res = await fetch(path, {
         method: 'POST',
@@ -1103,7 +1103,7 @@ export async function callWorkforceJourneyApi<T = Record<string, unknown>>(
 
       const contentType = res.headers.get('Content-Type') || '';
       if (contentType.includes('application/json')) {
-        if (typeof window !== 'undefined' && edgeApiAvailable === null) {
+        if (typeof (globalThis as { window?: unknown }).window !== 'undefined' && edgeApiAvailable === null) {
           edgeApiAvailable = true;
         }
         const json = (await res.json()) as Record<string, unknown>;
@@ -1140,12 +1140,12 @@ export async function callWorkforceJourneyApi<T = Record<string, unknown>>(
           span
         };
       }
-      if (typeof window !== 'undefined' && edgeApiAvailable === null) {
+      if (typeof (globalThis as { window?: unknown }).window !== 'undefined' && edgeApiAvailable === null) {
         edgeApiAvailable = false;
       }
     } catch {
       // Fall through to browser WebCrypto fallback
-      if (typeof window !== 'undefined' && edgeApiAvailable === null) {
+      if (typeof (globalThis as { window?: unknown }).window !== 'undefined' && edgeApiAvailable === null) {
         edgeApiAvailable = false;
       }
     }
