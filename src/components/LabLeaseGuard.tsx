@@ -49,6 +49,7 @@ export interface LabLeaseGuardProps {
   labSlug: string;
   labTitle: string;
   siteKey?: string;
+  onLeaseEnded?: () => void;
   children: React.ReactNode;
 }
 
@@ -95,6 +96,7 @@ export function LabLeaseGuard({
   labSlug,
   labTitle,
   siteKey = DEFAULT_TURNSTILE_SITE_KEY,
+  onLeaseEnded,
   children
 }: LabLeaseGuardProps): React.ReactElement {
   const [status, setStatus] = useState<LeaseStatusPayload | null>(null);
@@ -111,6 +113,10 @@ export function LabLeaseGuard({
   const widgetIdRef = useRef<string | null>(null);
   const fetchingRef = useRef<boolean>(false);
   const expiredRef = useRef<boolean>(false);
+  const onLeaseEndedRef = useRef<(() => void) | undefined>(onLeaseEnded);
+  onLeaseEndedRef.current = onLeaseEnded;
+  const prevStateRef = useRef<LeaseStatusPayload['state'] | null>(null);
+  const releasedManuallyRef = useRef<boolean>(false);
 
   const captureCountdown = useCallback((remainingSec: number) => {
     const perfNow = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -287,6 +293,25 @@ export function LabLeaseGuard({
     }
   };
 
+  useEffect(() => {
+    const prevState = prevStateRef.current;
+    const nextState = status?.state ?? null;
+    prevStateRef.current = nextState;
+
+    if (nextState === 'active') {
+      releasedManuallyRef.current = false;
+      return;
+    }
+
+    if (prevState === 'active' && nextState !== null) {
+      if (releasedManuallyRef.current) {
+        releasedManuallyRef.current = false;
+        return;
+      }
+      onLeaseEndedRef.current?.();
+    }
+  }, [status?.state]);
+
   const handleRelease = async () => {
     setSubmitting(true);
     try {
@@ -295,7 +320,9 @@ export function LabLeaseGuard({
         credentials: 'same-origin'
       });
       setTurnstileToken(null);
+      releasedManuallyRef.current = true;
       await fetchStatus();
+      onLeaseEndedRef.current?.();
     } finally {
       setSubmitting(false);
     }

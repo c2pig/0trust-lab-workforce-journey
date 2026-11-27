@@ -94,3 +94,5 @@ flowchart LR
 - **Layer 1 (`tests/server.test.ts`)**: Cloud Run Hono adapter, `X-Lab-Router-Secret` fail-closed `403`, TTL expiry, `X-Forwarded-Host` validation, JWT signature redaction, `413 PAYLOAD_TOO_LARGE` (>64 KB), and `400` malformed JSON / missing `session_id`.
 - **Layer 2 (`tests/api.test.ts`)**: Direct route testing (`login-provision`, `request-jit`, `jit-decision`, `protected-call`, `logout`) against `MemoryKvAdapter` covering multi-JIT requests, denial keeping `protected-call` `403`, CAEP revocation (`jti` reuse -> `401`), and session isolation.
 - **Layer 3 (`tests/selectors.test.ts`, `tests/engine.test.ts`)**: Pure DOM-free UI selectors in `src/engine/workforceSelectors.ts` (`formatCountdown`, seat badges, action gates) and `src/engine/workforceJourneyClient.ts`.
+
+- **Lease-Boundary Lifecycle (`LabLeaseGuard`)**: Synced `src/components/LabLeaseGuard.tsx` with `onLeaseEnded?: () => void` callback invoked on **End Lab** (`handleRelease()`) and lease expiry transitions.
