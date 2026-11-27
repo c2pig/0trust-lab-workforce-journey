@@ -31,18 +31,24 @@ export async function onRequestGet(context: {
     );
   }
 
+  if (!context.env.STATE_KV) {
+    return Response.redirect(
+      `${origin}/workforce-journey?entra_error=STATE_KV_UNAVAILABLE`,
+      302
+    );
+  }
+
   const state = randomBase64Url(16);
+  const nonce = randomBase64Url(16);
   const codeVerifier = randomBase64Url(32);
   const codeChallenge = await pkceS256Challenge(codeVerifier);
   const redirectUri = `${origin}/api/workforce-journey/entra/callback`;
 
-  if (context.env.STATE_KV) {
-    await context.env.STATE_KV.put(
-      `lab1:pkce:${state}`,
-      JSON.stringify({ code_verifier: codeVerifier, redirect_uri: redirectUri }),
-      { expirationTtl: 600 }
-    );
-  }
+  await context.env.STATE_KV.put(
+    `lab1:pkce:${state}`,
+    JSON.stringify({ code_verifier: codeVerifier, redirect_uri: redirectUri, nonce }),
+    { expirationTtl: 600 }
+  );
 
   const baseAuthority = (
     context.env.ENTRA_EXT_AUTHORITY ||
@@ -56,6 +62,7 @@ export async function onRequestGet(context: {
   authUrl.searchParams.set('response_mode', 'query');
   authUrl.searchParams.set('scope', 'openid profile email');
   authUrl.searchParams.set('state', state);
+  authUrl.searchParams.set('nonce', nonce);
   authUrl.searchParams.set('code_challenge', codeChallenge);
   authUrl.searchParams.set('code_challenge_method', 'S256');
 

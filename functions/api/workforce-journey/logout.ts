@@ -1,16 +1,18 @@
 import { createIdpAdapter, type WorkforceJourneyEnv } from '../lib/idpAdapter';
 import {
   extractBearerToken,
+  parseJsonBodyWithLimit,
   sanitizeSessionId,
   verifyWorkforceJourneyJwt
 } from '../lib/workforceJourneyCrypto';
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': 'no-store'
+      'Cache-Control': 'no-store',
+      ...(extraHeaders || {})
     }
   });
 }
@@ -19,48 +21,93 @@ export async function onRequestPost(context: {
   request: Request;
   env: WorkforceJourneyEnv;
 }): Promise<Response> {
-  let body: {
+  const bearer = extractBearerToken(context.request);
+  if (!bearer) {
+    return jsonResponse(
+      {
+        error: 'MISSING_SESSION_TOKEN',
+        message: 'Authorization: Bearer <jwt> header is required to trigger Universal Logout.'
+      },
+      401
+    );
+  }
+
+  const parsedBody = await parseJsonBodyWithLimit<{
     sessionId?: string;
     session_jwt?: string;
     jit_jwt?: string;
     reason?: string;
     mode?: 'sandbox' | 'entra-external-id';
-  } = {};
-  try {
-    body = (await context.request.json()) as {
-      sessionId?: string;
-      session_jwt?: string;
-      jit_jwt?: string;
-      reason?: string;
-      mode?: 'sandbox' | 'entra-external-id';
-    };
-  } catch {
-    // Allow empty JSON body
+  }>(context.request, { allowEmpty: true });
+  if (!parsedBody.ok) {
+    return jsonResponse({ error: parsedBody.error, message: parsedBody.message }, parsedBody.status);
+  }
+  const body = parsedBody.body;
+
+  const bearerVerified = await verifyWorkforceJourneyJwt(
+    bearer,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
+  if (!bearerVerified.valid || !bearerVerified.decoded) {
+    return jsonResponse(
+      {
+        error: 'INVALID_SESSION_TOKEN',
+        message: bearerVerified.error || 'Bearer token verification failed.'
+      },
+      401
+    );
   }
 
-  const bearer = extractBearerToken(context.request);
-  const candidateTokens = [bearer, body.session_jwt, body.jit_jwt].filter(
+  const bearerClaims = bearerVerified.decoded.payload;
+  const sessionId = sanitizeSessionId(
+    context.request.headers.get('X-Session-Id') || body.sessionId || bearerClaims.sid
+  );
+  if (bearerClaims.sid && bearerClaims.sid !== sessionId) {
+    return jsonResponse(
+      {
+        error: 'SESSION_MISMATCH',
+        message: 'Session token does not belong to this visitor session.'
+      },
+      403
+    );
+  }
+
+  const jtiSet = new Set<string>([bearerClaims.jti]);
+  if (bearerClaims.elevated_from_jti) jtiSet.add(bearerClaims.elevated_from_jti);
+  const subjectEmail = bearerClaims.email || 'alex.chen@acme-corp.io';
+
+  const extraTokens = [body.session_jwt, body.jit_jwt].filter(
     (t): t is string => Boolean(t && t.trim())
   );
-
-  const jtiSet = new Set<string>();
-  let inferredSid: string | undefined;
-  let subjectEmail = 'alex.chen@acme-corp.io';
-
-  for (const tok of candidateTokens) {
-    const verified = await verifyWorkforceJourneyJwt(tok, context.env.LAB1_JWT_SECRET);
-    if (verified.valid && verified.decoded) {
-      const p = verified.decoded.payload;
-      jtiSet.add(p.jti);
-      if (p.elevated_from_jti) jtiSet.add(p.elevated_from_jti);
-      if (!inferredSid) inferredSid = p.sid;
-      subjectEmail = p.email;
+  for (const tok of extraTokens) {
+    const verified = await verifyWorkforceJourneyJwt(
+      tok,
+      context.env.LAB1_JWT_SECRET,
+      context.env.ENVIRONMENT
+    );
+    if (!verified.valid || !verified.decoded) {
+      return jsonResponse(
+        {
+          error: 'INVALID_SESSION_TOKEN',
+          message: verified.error || 'Body token verification failed.'
+        },
+        401
+      );
     }
+    const p = verified.decoded.payload;
+    if (p.sid && p.sid !== sessionId) {
+      return jsonResponse(
+        {
+          error: 'SESSION_MISMATCH',
+          message: 'Body token does not belong to this visitor session.'
+        },
+        403
+      );
+    }
+    jtiSet.add(p.jti);
+    if (p.elevated_from_jti) jtiSet.add(p.elevated_from_jti);
   }
-
-  const sessionId = sanitizeSessionId(
-    context.request.headers.get('X-Session-Id') || body.sessionId || inferredSid
-  );
 
   const idp = createIdpAdapter(context.env, body.mode);
   const reason = body.reason || 'Universal Logout triggered by operator / CAEP signal';
@@ -89,15 +136,22 @@ export async function onRequestPost(context: {
     }
   };
 
-  return jsonResponse({
-    status: 'UNIVERSAL_LOGOUT_COMPLETE',
-    session_id: sessionId,
-    revoked_jtis: revokeResult.revoked_jtis,
-    caep_event: caepEvent,
-    scim_record: scimRecord,
-    idp_mode: idp.mode,
-    storage: revokeResult.storage,
-    external_sync: revokeResult.external_sync,
-    graph_request_id: revokeResult.graph_request_id
-  });
+  const isHttps = context.request.url.startsWith('https://');
+  const clearCookie = `lab1_entra_ticket=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isHttps ? '; Secure' : ''}`;
+
+  return jsonResponse(
+    {
+      status: 'UNIVERSAL_LOGOUT_COMPLETE',
+      session_id: sessionId,
+      revoked_jtis: revokeResult.revoked_jtis,
+      caep_event: caepEvent,
+      scim_record: scimRecord,
+      idp_mode: idp.mode,
+      storage: revokeResult.storage,
+      external_sync: revokeResult.external_sync,
+      graph_request_id: revokeResult.graph_request_id
+    },
+    200,
+    { 'Set-Cookie': clearCookie }
+  );
 }

@@ -74,6 +74,7 @@ export function useWorkforceLab() {
   const [provisioning, setProvisioning] = useState<boolean>(false);
   const [provisionError, setProvisionError] = useState<string | null>(null);
   const [sessionJwt, setSessionJwt] = useState<string>('');
+  const [approverJwt, setApproverJwt] = useState<string>('');
   const [sessionClaims, setSessionClaims] = useState<WorkforceJourneyDecodedJwt | null>(null);
   const [jitJwt, setJitJwt] = useState<string>('');
   const [jitClaims, setJitClaims] = useState<WorkforceJourneyDecodedJwt | null>(null);
@@ -194,15 +195,31 @@ export function useWorkforceLab() {
       : window.location.search.replace(/^\?/, '');
     if (hashQuery) {
       const params = new URLSearchParams(hashQuery);
-      const ticket = params.get('entra_ticket');
-      const oid = params.get('oid');
-      const email = params.get('email');
+      const entraAuth = params.get('entra_auth');
       const err = params.get('entra_error');
-      if (ticket && oid && email) {
+      if (entraAuth === '1') {
         setLabMode('entra-external-id');
-        setEntraTicket(ticket);
-        setEntraIdentity({ oid, email });
-        setEntraError(null);
+        fetch('/api/workforce-journey/entra/session', { cache: 'no-store' })
+          .then(async (res) => {
+            if (!res.ok) throw new Error('ENTRA_OIDC_REQUIRED');
+            return (await res.json()) as {
+              authenticated?: boolean;
+              oid?: string;
+              email?: string;
+            };
+          })
+          .then((data) => {
+            if (data.authenticated && data.oid && data.email) {
+              setEntraTicket('cookie-session');
+              setEntraIdentity({ oid: data.oid, email: data.email });
+              setEntraError(null);
+            } else {
+              setEntraError('ENTRA_OIDC_REQUIRED');
+            }
+          })
+          .catch(() => {
+            setEntraError('ENTRA_OIDC_REQUIRED');
+          });
       } else if (err) {
         setLabMode('entra-external-id');
         setEntraError(err);
@@ -241,6 +258,7 @@ export function useWorkforceLab() {
       }
 
       setSessionJwt(res.data.session_jwt);
+      setApproverJwt(res.data.approver_jwt || '');
       setSessionClaims(res.data.decoded_claims || null);
       if (res.data.scim_record) setScimRecord(res.data.scim_record);
 
@@ -292,6 +310,7 @@ export function useWorkforceLab() {
     setProvisioning(false);
     setProvisionError(null);
     setSessionJwt('');
+    setApproverJwt('');
     setSessionClaims(null);
     setJitJwt('');
     setJitClaims(null);
@@ -422,6 +441,7 @@ export function useWorkforceLab() {
       sessionId: currentSid,
       requestId: pendingRequest.request_id,
       decision,
+      approverJwt,
       approver: {
         id: 'marcus-chen',
         name: 'Marcus Chen',

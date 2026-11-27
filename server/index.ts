@@ -18,8 +18,19 @@ const server = serve(
   }
 );
 
+let shuttingDown = false;
 const shutdown = () => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
+  const forceExitTimer = setTimeout(() => {
+    process.exit(0);
+  }, 5000);
+  forceExitTimer.unref?.();
+
+  (server as { closeIdleConnections?: () => void }).closeIdleConnections?.();
   server.close(() => {
+    clearTimeout(forceExitTimer);
     process.exit(0);
   });
 };

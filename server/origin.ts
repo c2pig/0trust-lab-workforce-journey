@@ -1,11 +1,14 @@
-const DEFAULT_ALLOWED_FORWARDED_HOSTS = new Set<string>([
-  'lab.0trust.dev',
-  'localhost:8080',
-  '127.0.0.1:8080'
-]);
+const DEFAULT_ALLOWED_FORWARDED_HOSTS = new Set<string>(['lab.0trust.dev']);
 
 const STRICT_HOST_PATTERN = /^[a-z0-9.-]+(:\d{1,5})?$/;
 const LOCALHOST_PORT_PATTERN = /^(localhost|127\.0\.0\.1):\d{1,5}$/;
+
+function isNonProduction(): boolean {
+  return (
+    typeof process === 'undefined' ||
+    (process.env?.ENVIRONMENT !== 'production' && !process.env?.K_SERVICE)
+  );
+}
 
 function firstHeaderValue(raw: string | null): string {
   if (!raw) return '';
@@ -43,7 +46,7 @@ export function isAllowedForwardedHost(
     return false;
   }
   if (LOCALHOST_PORT_PATTERN.test(host)) {
-    return true;
+    return isNonProduction();
   }
   return getAllowedHosts(extraAllowedHosts).has(host);
 }

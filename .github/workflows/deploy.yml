@@ -21,8 +21,32 @@ env:
   CLOUD_RUN_SERVICE: zerotrust-lab-workforce-journey
 
 jobs:
+  test:
+    name: Typecheck, Test & Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout 0trust-lab-workforce-journey
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck, Test & Build Production Bundle
+        run: |
+          npm test
+          npm run build
+
   deploy-pages:
     name: Deploy Static SPA to Cloudflare Pages
+    needs: [test, deploy-cloudrun]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -57,6 +81,7 @@ jobs:
 
   deploy-cloudrun:
     name: Build & Deploy API to GCP Cloud Run
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

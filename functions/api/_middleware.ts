@@ -1,7 +1,9 @@
 import {
-  buildResourceAttributes,
+  buildOtlpLogPayload,
+  buildOtlpTracePayload,
   parseOrCreateTraceparent,
   postOtlpPayload,
+  redactAuthHeader,
   redactJwtSignatures,
   sanitizeSessionId,
   type OtlpEnv
@@ -10,6 +12,10 @@ import {
 export type EdgeMiddlewareEnv = OtlpEnv;
 
 export { redactJwtSignatures };
+
+const NULL_BODY_STATUSES = new Set([204, 205, 304]);
+const SCOPE_NAME = 'functions/api/_middleware.ts';
+const SCOPE_VERSION = '1.0.0';
 
 export function resolveServiceName(env: EdgeMiddlewareEnv): string {
   return env.OTEL_SERVICE_NAME || (env.LAB_SLUG ? `zerotrust-lab-${env.LAB_SLUG}` : '0trust-dev-edge');
@@ -31,127 +37,63 @@ export interface TelemetrySpanMetadata {
   redaction_applied: boolean;
 }
 
-function mapStatusToSeverity(status: number): {
-  severityNumber: number;
-  severityText: 'ERROR' | 'WARN' | 'INFO';
-} {
-  if (status >= 500) {
-    return { severityNumber: 17, severityText: 'ERROR' };
-  }
-  if (status >= 400) {
-    return { severityNumber: 13, severityText: 'WARN' };
-  }
-  return { severityNumber: 9, severityText: 'INFO' };
-}
-
-async function exportOtlpTrace(
-  env: EdgeMiddlewareEnv,
+function scheduleOtlpExport(
+  context: {
+    env: EdgeMiddlewareEnv;
+    waitUntil?: (promise: Promise<unknown>) => void;
+  },
   telemetry: TelemetrySpanMetadata,
   startUnixNano: string,
-  endUnixNano: string
-): Promise<void> {
-  if (!env.OTLP_ENDPOINT) return;
+  endUnixNano: string,
+  errorMessage?: string
+): void {
+  if (!context.env.OTLP_ENDPOINT?.trim() || typeof context.waitUntil !== 'function') {
+    return;
+  }
 
-  const otlpPayload = {
-    resourceSpans: [
-      {
-        resource: {
-          attributes: buildResourceAttributes(resolveServiceName(env), env.ENVIRONMENT)
-        },
-        scopeSpans: [
-          {
-            scope: { name: 'functions/api/_middleware.ts', version: '1.0.0' },
-            spans: [
-              {
-                traceId: telemetry.trace_id,
-                spanId: telemetry.span_id,
-                parentSpanId:
-                  telemetry.parent_span_id === '0000000000000000'
-                    ? undefined
-                    : telemetry.parent_span_id,
-                name: `${telemetry.method} ${telemetry.path}`,
-                kind: 2,
-                startTimeUnixNano: startUnixNano,
-                endTimeUnixNano: endUnixNano,
-                attributes: [
-                  { key: 'http.method', value: { stringValue: telemetry.method } },
-                  { key: 'http.target', value: { stringValue: telemetry.path } },
-                  { key: 'http.status_code', value: { intValue: telemetry.status } },
-                  { key: '0trust.session_id', value: { stringValue: telemetry.session_id } },
-                  { key: '0trust.latency_ms', value: { intValue: telemetry.latency_ms } },
-                  { key: '0trust.redaction_applied', value: { boolValue: telemetry.redaction_applied } }
-                ],
-                status: { code: telemetry.status >= 500 ? 2 : 1 }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-
-  await postOtlpPayload(env, '/v1/traces', otlpPayload);
-}
-
-async function exportOtlpLog(
-  env: EdgeMiddlewareEnv,
-  telemetry: TelemetrySpanMetadata,
-  endUnixNano: string
-): Promise<void> {
-  if (!env.OTLP_ENDPOINT) return;
-  const { severityNumber, severityText } = mapStatusToSeverity(telemetry.status);
-
-  const rawBody = JSON.stringify({
-    message: `${telemetry.method} ${telemetry.path} -> ${telemetry.status} (${telemetry.latency_ms}ms)`,
-    session_id: telemetry.session_id,
+  const serviceName = resolveServiceName(context.env);
+  const tracePayload = buildOtlpTracePayload({
+    serviceName,
+    environment: context.env.ENVIRONMENT,
+    scopeName: SCOPE_NAME,
+    scopeVersion: SCOPE_VERSION,
+    traceId: telemetry.trace_id,
+    spanId: telemetry.span_id,
+    parentSpanId: telemetry.parent_span_id,
     method: telemetry.method,
     path: telemetry.path,
     status: telemetry.status,
-    latency_ms: telemetry.latency_ms,
-    redaction_applied: telemetry.redaction_applied,
-    trace_id: telemetry.trace_id,
-    span_id: telemetry.span_id
+    latencyMs: telemetry.latency_ms,
+    sessionId: telemetry.session_id,
+    redactionApplied: telemetry.redaction_applied,
+    startUnixNano,
+    endUnixNano,
+    errorMessage
   });
-  const bodyRedaction = redactJwtSignatures(rawBody);
-  const redactionApplied = telemetry.redaction_applied || bodyRedaction.changed;
 
-  const otlpLogPayload = {
-    resourceLogs: [
-      {
-        resource: {
-          attributes: buildResourceAttributes(resolveServiceName(env), env.ENVIRONMENT)
-        },
-        scopeLogs: [
-          {
-            scope: { name: 'functions/api/_middleware.ts', version: '1.0.0' },
-            logRecords: [
-              {
-                timeUnixNano: endUnixNano,
-                observedTimeUnixNano: endUnixNano,
-                severityNumber,
-                severityText,
-                traceId: telemetry.trace_id,
-                spanId: telemetry.span_id,
-                body: { stringValue: bodyRedaction.redacted },
-                attributes: [
-                  { key: '0trust.session_id', value: { stringValue: telemetry.session_id } },
-                  { key: 'http.method', value: { stringValue: telemetry.method } },
-                  { key: 'http.target', value: { stringValue: telemetry.path } },
-                  { key: 'http.status_code', value: { intValue: telemetry.status } },
-                  { key: '0trust.latency_ms', value: { intValue: telemetry.latency_ms } },
-                  { key: '0trust.redaction_applied', value: { boolValue: redactionApplied } },
-                  { key: 'trace_id', value: { stringValue: telemetry.trace_id } },
-                  { key: 'span_id', value: { stringValue: telemetry.span_id } }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
+  const logPayload = buildOtlpLogPayload({
+    serviceName,
+    environment: context.env.ENVIRONMENT,
+    scopeName: SCOPE_NAME,
+    scopeVersion: SCOPE_VERSION,
+    traceId: telemetry.trace_id,
+    spanId: telemetry.span_id,
+    method: telemetry.method,
+    path: telemetry.path,
+    status: telemetry.status,
+    latencyMs: telemetry.latency_ms,
+    sessionId: telemetry.session_id,
+    redactionApplied: telemetry.redaction_applied,
+    endUnixNano,
+    errorMessage
+  });
 
-  await postOtlpPayload(env, '/v1/logs', otlpLogPayload);
+  context.waitUntil(
+    Promise.allSettled([
+      postOtlpPayload(context.env, '/v1/traces', tracePayload),
+      postOtlpPayload(context.env, '/v1/logs', logPayload)
+    ])
+  );
 }
 
 export async function onRequest(context: {
@@ -169,10 +111,59 @@ export async function onRequest(context: {
     context.request.headers.get('X-Session-Id') || url.searchParams.get('session')
   );
 
-  const rawAuth = context.request.headers.get('Authorization');
-  const authRedaction = rawAuth ? redactJwtSignatures(rawAuth) : { redacted: '', changed: false };
+  const authRedaction = redactAuthHeader(context.request.headers.get('Authorization'));
+  const otlpConfigured =
+    Boolean(context.env.OTLP_ENDPOINT?.trim()) && typeof context.waitUntil === 'function';
 
-  const response = await context.next();
+  let response: Response;
+  try {
+    response = await context.next();
+  } catch (err) {
+    const latencyMs = Math.max(1, Math.round(performance.now() - startPerf));
+    const endMs = Date.now();
+    const errorMessage = err instanceof Error ? err.message : String(err);
+
+    const errorTelemetry: TelemetrySpanMetadata = {
+      traceparent: traceInfo.traceparent,
+      trace_id: traceInfo.traceId,
+      span_id: traceInfo.spanId,
+      parent_span_id: traceInfo.parentSpanId ?? '0000000000000000',
+      session_id: sessionId,
+      method: context.request.method,
+      path: url.pathname,
+      status: 500,
+      latency_ms: latencyMs,
+      timestamp: new Date().toISOString(),
+      otlp_export: otlpConfigured ? 'configured' : 'in-lab-only',
+      redacted_auth_header: authRedaction.redacted,
+      redaction_applied: authRedaction.changed
+    };
+
+    scheduleOtlpExport(
+      context,
+      errorTelemetry,
+      `${startMs}000000`,
+      `${endMs}000000`,
+      errorMessage
+    );
+
+    return new Response(
+      JSON.stringify({
+        error: 'INTERNAL_EDGE_ERROR',
+        trace_id: traceInfo.traceId
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          traceparent: traceInfo.traceparent,
+          'X-Edge-Latency-Ms': String(latencyMs)
+        }
+      }
+    );
+  }
+
   const latencyMs = Math.max(1, Math.round(performance.now() - startPerf));
   const endMs = Date.now();
 
@@ -187,32 +178,33 @@ export async function onRequest(context: {
     status: response.status,
     latency_ms: latencyMs,
     timestamp: new Date().toISOString(),
-    otlp_export: context.env.OTLP_ENDPOINT ? 'configured' : 'in-lab-only',
-    redacted_auth_header: rawAuth ? authRedaction.redacted : null,
+    otlp_export: otlpConfigured ? 'configured' : 'in-lab-only',
+    redacted_auth_header: authRedaction.redacted,
     redaction_applied: authRedaction.changed
   };
 
-  if (context.env.OTLP_ENDPOINT && typeof context.waitUntil === 'function') {
-    const startNano = `${startMs}000000`;
-    const endNano = `${endMs}000000`;
-    context.waitUntil(
-      Promise.allSettled([
-        exportOtlpTrace(context.env, telemetry, startNano, endNano),
-        exportOtlpLog(context.env, telemetry, endNano)
-      ])
-    );
-  }
+  scheduleOtlpExport(context, telemetry, `${startMs}000000`, `${endMs}000000`);
 
-  const contentType = response.headers.get('Content-Type') || '';
   const headers = new Headers(response.headers);
   headers.set('traceparent', traceInfo.traceparent);
   headers.set('X-Edge-Latency-Ms', String(latencyMs));
 
+  if (NULL_BODY_STATUSES.has(response.status)) {
+    return new Response(null, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
+  }
+
+  const contentType = response.headers.get('Content-Type') || '';
   if (contentType.includes('application/json')) {
     try {
       const cloned = response.clone();
       const bodyJson = (await cloned.json()) as Record<string, unknown>;
       if (bodyJson && typeof bodyJson === 'object' && !Array.isArray(bodyJson)) {
+        headers.delete('content-length');
+        headers.delete('content-encoding');
         bodyJson._telemetry = telemetry;
         return new Response(JSON.stringify(bodyJson), {
           status: response.status,

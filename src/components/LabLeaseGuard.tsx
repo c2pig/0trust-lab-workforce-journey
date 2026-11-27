@@ -32,11 +32,17 @@ interface LeaseStatusPayload {
   isOwner?: boolean;
   expiresAt?: number | null;
   retryAfterSec?: number;
+  durationSec?: number;
   remainingCalls?: number;
   dailyRemaining?: number;
   turnstileSiteKey?: string;
   message?: string;
   error?: string;
+}
+
+interface CountdownAnchor {
+  remainingSec: number;
+  capturedAtPerf: number;
 }
 
 export interface LabLeaseGuardProps {
@@ -92,22 +98,41 @@ export function LabLeaseGuard({
   children
 }: LabLeaseGuardProps): React.ReactElement {
   const [status, setStatus] = useState<LeaseStatusPayload | null>(null);
-  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [countdownAnchor, setCountdownAnchor] = useState<CountdownAnchor | null>(null);
+  const [nowPerf, setNowPerf] = useState<number>(() =>
+    typeof performance !== 'undefined' ? performance.now() : Date.now()
+  );
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const widgetContainerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const fetchingRef = useRef<boolean>(false);
+  const expiredRef = useRef<boolean>(false);
+
+  const captureCountdown = useCallback((remainingSec: number) => {
+    const perfNow = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    setCountdownAnchor({ remainingSec: Math.max(0, remainingSec), capturedAtPerf: perfNow });
+    setNowPerf(perfNow);
+    expiredRef.current = false;
+  }, []);
 
   const fetchStatus = useCallback(async () => {
     if (
       typeof window !== 'undefined' &&
       (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ) {
+      setFetchError(null);
       setStatus({ enabled: false, state: 'available' });
       return;
     }
+
+    if (fetchingRef.current) {
+      return;
+    }
+    fetchingRef.current = true;
 
     try {
       const res = await fetch(`/api/lease/${encodeURIComponent(labSlug)}/status`, {
@@ -116,15 +141,29 @@ export function LabLeaseGuard({
       });
       const ct = res.headers.get('Content-Type') || '';
       if (!ct.includes('application/json')) {
-        setStatus({ enabled: false, state: 'available' });
+        setFetchError('Unable to verify lab bench availability (unexpected server response).');
         return;
       }
       const data = (await res.json()) as LeaseStatusPayload;
+      if (!res.ok) {
+        setFetchError(
+          data.message || data.error || `Unable to verify lab bench availability (HTTP ${res.status}).`
+        );
+        return;
+      }
+      setFetchError(null);
       setStatus(data);
+      const serverRemaining =
+        typeof data.retryAfterSec === 'number' && Number.isFinite(data.retryAfterSec)
+          ? data.retryAfterSec
+          : 0;
+      captureCountdown(serverRemaining);
     } catch {
-      setStatus({ enabled: false, state: 'available' });
+      setFetchError('Network error while checking lab bench availability. Please retry.');
+    } finally {
+      fetchingRef.current = false;
     }
-  }, [labSlug]);
+  }, [labSlug, captureCountdown]);
 
   useEffect(() => {
     void fetchStatus();
@@ -136,7 +175,7 @@ export function LabLeaseGuard({
       return;
     }
     const timer = window.setInterval(() => {
-      setNowMs(Date.now());
+      setNowPerf(typeof performance !== 'undefined' ? performance.now() : Date.now());
     }, 1000);
     return () => window.clearInterval(timer);
   }, [status?.enabled, status?.state]);
@@ -150,13 +189,18 @@ export function LabLeaseGuard({
     return () => window.clearInterval(poll);
   }, [status?.enabled, status?.state, fetchStatus]);
 
-  // Auto-refresh status when hard-cap 3-minute countdown reaches 0
+  const remainingSec = countdownAnchor
+    ? Math.max(0, Math.ceil(countdownAnchor.remainingSec - (nowPerf - countdownAnchor.capturedAtPerf) / 1000))
+    : 0;
+
+  // Auto-refresh status at most once per lease epoch when a positive countdown reaches 0
   useEffect(() => {
-    if (!status?.enabled || !status.expiresAt) return;
-    if (status.expiresAt <= nowMs) {
+    if (!status?.enabled || !countdownAnchor || countdownAnchor.remainingSec <= 0) return;
+    if (remainingSec <= 0 && !expiredRef.current) {
+      expiredRef.current = true;
       void fetchStatus();
     }
-  }, [status?.enabled, status?.expiresAt, nowMs, fetchStatus]);
+  }, [status?.enabled, countdownAnchor, remainingSec, fetchStatus]);
 
   // Mount official Cloudflare Turnstile explicit widget when gate is available
   useEffect(() => {
@@ -208,9 +252,25 @@ export function LabLeaseGuard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ turnstileToken })
       });
+      const ct = res.headers.get('Content-Type') || '';
+      if (!ct.includes('application/json')) {
+        setErrorMsg('Unable to start lab session (unexpected server response). Please retry.');
+        setTurnstileToken(null);
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.reset(widgetIdRef.current);
+        }
+        await fetchStatus();
+        return;
+      }
       const data = (await res.json()) as LeaseStatusPayload;
       if (res.ok && data.state === 'active') {
-        setNowMs(Date.now());
+        const serverRemaining =
+          typeof data.durationSec === 'number' && Number.isFinite(data.durationSec)
+            ? data.durationSec
+            : typeof data.retryAfterSec === 'number' && Number.isFinite(data.retryAfterSec)
+              ? data.retryAfterSec
+              : 0;
+        captureCountdown(serverRemaining);
         setStatus({ ...data, enabled: true, state: 'active', isOwner: true });
       } else {
         setErrorMsg(data.message || 'Unable to start lab session. Please try again.');
@@ -241,14 +301,134 @@ export function LabLeaseGuard({
     }
   };
 
-  // Passthrough when lease gating is disabled or still initializing
-  if (!status || !status.enabled) {
-    return <>{children}</>;
+  // Fail closed on non-localhost status fetch errors (never mount children)
+  if (fetchError) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          backgroundColor: 'var(--bg-canvas)',
+          color: 'var(--text-primary)'
+        }}
+      >
+        <div
+          role="alert"
+          style={{
+            width: '100%',
+            maxWidth: '460px',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--accent-crimson-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-md)',
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                backgroundColor: 'var(--accent-crimson-dim)',
+                color: 'var(--accent-crimson-ink)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Lock size={18} />
+            </span>
+            <div>
+              <h1 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>{labTitle}</h1>
+              <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                Lab Bench Availability Check Failed
+              </div>
+            </div>
+          </div>
+          <p style={{ fontSize: '13.5px', color: 'var(--accent-crimson-ink)', margin: 0 }}>
+            {fetchError}
+          </p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setFetchError(null);
+              setStatus(null);
+              void fetchStatus();
+            }}
+            style={{ width: '100%', justifyContent: 'center', padding: '10px 16px', fontSize: '14px' }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  const remainingSec = status.expiresAt
-    ? Math.max(0, Math.ceil((status.expiresAt - nowMs) / 1000))
-    : status.retryAfterSec ?? 0;
+  // Loading gate while status === null (do not mount children)
+  if (!status) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px',
+          backgroundColor: 'var(--bg-canvas)',
+          color: 'var(--text-primary)'
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '460px',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-md)',
+            padding: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}
+        >
+          <span
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              backgroundColor: 'var(--accent-primary-dim)',
+              color: 'var(--accent-primary)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <ShieldCheck size={18} />
+          </span>
+          <div>
+            <h1 style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>{labTitle}</h1>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              Checking lab bench availability…
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Passthrough only when lease gating is explicitly disabled
+  if (!status.enabled) {
+    return <>{children}</>;
+  }
 
   if (status.state === 'active') {
     return (

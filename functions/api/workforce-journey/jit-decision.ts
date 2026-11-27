@@ -6,8 +6,11 @@ import {
   type WorkforceJourneyEnv
 } from '../lib/idpAdapter';
 import {
+  extractBearerToken,
+  parseJsonBodyWithLimit,
   sanitizeSessionId,
   signWorkforceJourneyJwt,
+  verifyWorkforceJourneyJwt,
   type WorkforceJourneyJwtPayload
 } from '../lib/workforceJourneyCrypto';
 
@@ -28,7 +31,19 @@ export async function onRequestPost(context: {
   request: Request;
   env: WorkforceJourneyEnv;
 }): Promise<Response> {
-  let body: {
+  // 0. Require Approver Bearer JWT
+  const approverToken = extractBearerToken(context.request);
+  if (!approverToken) {
+    return jsonResponse(
+      {
+        error: 'MISSING_APPROVER_TOKEN',
+        message: 'Authorization: Bearer <approver_jwt> header is required.'
+      },
+      401
+    );
+  }
+
+  const parsedBody = await parseJsonBodyWithLimit<{
     request_id?: string;
     decision?: string;
     approver?: {
@@ -39,11 +54,50 @@ export async function onRequestPost(context: {
     reason?: string;
     sessionId?: string;
     mode?: 'sandbox' | 'entra-external-id';
-  };
-  try {
-    body = (await context.request.json()) as typeof body;
-  } catch {
-    return jsonResponse({ error: 'INVALID_JSON', message: 'Request body must be valid JSON.' }, 400);
+  }>(context.request, { allowEmpty: false });
+  if (!parsedBody.ok) {
+    return jsonResponse({ error: parsedBody.error, message: parsedBody.message }, parsedBody.status);
+  }
+  const body = parsedBody.body;
+
+  const verifiedApprover = await verifyWorkforceJourneyJwt(
+    approverToken,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
+  if (!verifiedApprover.valid || !verifiedApprover.decoded) {
+    return jsonResponse(
+      {
+        error: verifiedApprover.expired ? 'APPROVER_TOKEN_EXPIRED' : 'INVALID_APPROVER_TOKEN',
+        message: verifiedApprover.error || 'Approver token verification failed.'
+      },
+      401
+    );
+  }
+
+  const approverClaims = verifiedApprover.decoded.payload;
+  const sessionId = sanitizeSessionId(
+    context.request.headers.get('X-Session-Id') || body.sessionId
+  );
+  if (approverClaims.sid && approverClaims.sid !== sessionId) {
+    return jsonResponse(
+      {
+        error: 'SESSION_MISMATCH',
+        message: 'Approver token does not belong to this visitor session.'
+      },
+      403
+    );
+  }
+
+  const approverRoles = Array.isArray(approverClaims.roles) ? approverClaims.roles : [];
+  if (!approverRoles.includes('Audit Approver')) {
+    return jsonResponse(
+      {
+        error: 'APPROVER_ROLE_REQUIRED',
+        message: 'Approver token must include the "Audit Approver" role.'
+      },
+      403
+    );
   }
 
   // 1. Validate input fields
@@ -68,10 +122,6 @@ export async function onRequestPost(context: {
       400
     );
   }
-
-  const sessionId = sanitizeSessionId(
-    context.request.headers.get('X-Session-Id') || body.sessionId
-  );
 
   // 2. Load PENDING request from STATE_KV
   const record = await getJitRequestRecord(context.env, sessionId, requestId);
@@ -112,14 +162,15 @@ export async function onRequestPost(context: {
     );
   }
 
-  // 4. Check requester CAEP revocation
+  // 4. Check requester & approver CAEP revocation
   const idp = createIdpAdapter(context.env, body.mode);
-  const [jtiRevoked, dirRecord] = await Promise.all([
+  const [jtiRevoked, approverJtiRevoked, dirRecord] = await Promise.all([
     idp.isJtiRevoked(sessionId, record.requester.session_jti),
+    idp.isJtiRevoked(sessionId, approverClaims.jti),
     idp.getDirectoryRecord(sessionId)
   ]);
 
-  if (jtiRevoked || dirRecord?.status === 'REVOKED') {
+  if (jtiRevoked || approverJtiRevoked || dirRecord?.status === 'REVOKED') {
     return jsonResponse(
       {
         error: 'TOKEN_REVOKED',
@@ -131,10 +182,10 @@ export async function onRequestPost(context: {
     );
   }
 
-  // 5. Self-approval guard
-  const approverEmail = body.approver?.email?.trim() || 'marcus.chen@acme-corp.io';
-  const approverName = body.approver?.name?.trim() || 'Marcus Chen';
-  if (approverEmail.toLowerCase() === record.requester.email.toLowerCase()) {
+  // 5. Self-approval guard using verified JWT claims.email
+  const approverEmail = (approverClaims.email || '').trim();
+  const approverName = (approverClaims.name || 'Audit Approver').trim();
+  if (!approverEmail || approverEmail.toLowerCase() === record.requester.email.toLowerCase()) {
     return jsonResponse(
       {
         error: 'SELF_APPROVAL_FORBIDDEN',
@@ -251,7 +302,11 @@ export async function onRequestPost(context: {
     exp: nowSec + ttlSeconds
   };
 
-  const signedJit = await signWorkforceJourneyJwt(jitPayload, context.env.LAB1_JWT_SECRET);
+  const signedJit = await signWorkforceJourneyJwt(
+    jitPayload,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
 
   return jsonResponse({
     status: 'JIT_GRANTED',

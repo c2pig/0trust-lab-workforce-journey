@@ -1,5 +1,11 @@
 import { createIdpAdapter, type WorkforceJourneyEnv } from '../lib/idpAdapter';
-import { sanitizeSessionId, signWorkforceJourneyJwt, type WorkforceJourneyJwtPayload } from '../lib/workforceJourneyCrypto';
+import {
+  getCookieValue,
+  parseJsonBodyWithLimit,
+  sanitizeSessionId,
+  signWorkforceJourneyJwt,
+  type WorkforceJourneyJwtPayload
+} from '../lib/workforceJourneyCrypto';
 
 interface PersonaConfig {
   id: string;
@@ -63,24 +69,17 @@ export async function onRequestPost(context: {
   request: Request;
   env: WorkforceJourneyEnv;
 }): Promise<Response> {
-  let body: {
+  const parsedBody = await parseJsonBodyWithLimit<{
     personaId?: string;
     roles?: string[];
     sessionId?: string;
     mode?: 'sandbox' | 'entra-external-id';
     entra_ticket?: string;
-  };
-  try {
-    body = (await context.request.json()) as {
-      personaId?: string;
-      roles?: string[];
-      sessionId?: string;
-      mode?: 'sandbox' | 'entra-external-id';
-      entra_ticket?: string;
-    };
-  } catch {
-    return jsonResponse({ error: 'INVALID_JSON', message: 'Request body must be valid JSON.' }, 400);
+  }>(context.request, { allowEmpty: false });
+  if (!parsedBody.ok) {
+    return jsonResponse({ error: parsedBody.error, message: parsedBody.message }, parsedBody.status);
   }
+  const body = parsedBody.body;
 
   const sessionId = sanitizeSessionId(
     context.request.headers.get('X-Session-Id') || body.sessionId
@@ -89,7 +88,9 @@ export async function onRequestPost(context: {
   let entraOid: string | undefined;
 
   if (body.mode === 'entra-external-id') {
-    if (!body.entra_ticket) {
+    const cookieTicket = getCookieValue(context.request, 'lab1_entra_ticket');
+    const ticket = cookieTicket || (typeof body.entra_ticket === 'string' ? body.entra_ticket.trim() : '');
+    if (!ticket) {
       return jsonResponse(
         {
           error: 'ENTRA_OIDC_REQUIRED',
@@ -98,8 +99,17 @@ export async function onRequestPost(context: {
         401
       );
     }
+    if (!context.env.STATE_KV && context.env.ENVIRONMENT === 'production') {
+      return jsonResponse(
+        {
+          error: 'ENTRA_OIDC_REQUIRED',
+          message: 'STATE_KV is required for Entra External ID ticket verification.'
+        },
+        401
+      );
+    }
     if (context.env.STATE_KV) {
-      const rawTicket = await context.env.STATE_KV.get(`lab1:entra-oidc:${body.entra_ticket}`);
+      const rawTicket = await context.env.STATE_KV.get(`lab1:entra-oidc:${ticket}`);
       if (!rawTicket) {
         return jsonResponse(
           {
@@ -184,13 +194,40 @@ export async function onRequestPost(context: {
     exp: nowSec + 3600
   };
 
-  const signed = await signWorkforceJourneyJwt(payload, context.env.LAB1_JWT_SECRET);
+  const signed = await signWorkforceJourneyJwt(
+    payload,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
+
+  // Mint Seat 2 Approver JWT (Marcus Chen, Audit Approver) without overwriting requester SCIM record
+  const approverPersona = PERSONAS['marcus-chen'];
+  const approverPayload: WorkforceJourneyJwtPayload = {
+    iss: idp.mode === 'entra-external-id' ? 'https://ciam.0trust.dev' : 'https://iam.0trust.dev',
+    sub: approverPersona.id,
+    email: approverPersona.email,
+    name: approverPersona.name,
+    department: approverPersona.department,
+    roles: ['Audit Approver'],
+    scope: 'pam:approve',
+    token_type: 'session',
+    jti: `apprv_${crypto.randomUUID().slice(0, 12)}`,
+    sid: sessionId,
+    iat: nowSec,
+    exp: nowSec + 3600
+  };
+  const approverSigned = await signWorkforceJourneyJwt(
+    approverPayload,
+    context.env.LAB1_JWT_SECRET,
+    context.env.ENVIRONMENT
+  );
 
   return jsonResponse({
     status: 'PROVISIONED',
     persona,
     roles: requestedRoles,
     session_jwt: signed.token,
+    approver_jwt: approverSigned.token,
     decoded_claims: {
       header: signed.header,
       payload: signed.payload

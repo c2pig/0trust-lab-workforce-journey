@@ -38,21 +38,29 @@ export async function onRequestGet(context: {
     );
   }
 
-  let codeVerifier = '';
-  let redirectUri = `${origin}/api/workforce-journey/entra/callback`;
-  if (context.env.STATE_KV) {
-    const raw = await context.env.STATE_KV.get(`lab1:pkce:${state}`);
-    if (!raw) {
-      return Response.redirect(
-        `${origin}/workforce-journey?entra_error=PKCE_STATE_EXPIRED`,
-        302
-      );
-    }
-    const parsed = JSON.parse(raw) as { code_verifier: string; redirect_uri: string };
-    codeVerifier = parsed.code_verifier;
-    redirectUri = parsed.redirect_uri;
-    await context.env.STATE_KV.delete(`lab1:pkce:${state}`);
+  if (!context.env.STATE_KV) {
+    return Response.redirect(
+      `${origin}/workforce-journey?entra_error=STATE_KV_UNAVAILABLE`,
+      302
+    );
   }
+
+  const raw = await context.env.STATE_KV.get(`lab1:pkce:${state}`);
+  if (!raw) {
+    return Response.redirect(
+      `${origin}/workforce-journey?entra_error=PKCE_STATE_EXPIRED`,
+      302
+    );
+  }
+  const parsed = JSON.parse(raw) as {
+    code_verifier: string;
+    redirect_uri: string;
+    nonce?: string;
+  };
+  const codeVerifier = parsed.code_verifier;
+  const redirectUri = parsed.redirect_uri;
+  const expectedNonce = parsed.nonce;
+  await context.env.STATE_KV.delete(`lab1:pkce:${state}`);
 
   const baseAuthority = (
     context.env.ENTRA_EXT_AUTHORITY ||
@@ -83,11 +91,34 @@ export async function onRequestGet(context: {
 
   const tokenData = (await tokenRes.json()) as { id_token?: string };
   const claims = tokenData.id_token ? decodeJwtPayload(tokenData.id_token) : null;
-  const oid = String(claims?.oid || claims?.sub || '');
+  if (!claims) {
+    return Response.redirect(
+      `${origin}/workforce-journey?entra_error=INVALID_ID_TOKEN`,
+      302
+    );
+  }
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const iss = typeof claims.iss === 'string' ? claims.iss : '';
+  const aud = claims.aud;
+  const audMatches =
+    aud === context.env.ENTRA_EXT_CLIENT_ID ||
+    (Array.isArray(aud) && aud.includes(context.env.ENTRA_EXT_CLIENT_ID));
+  const expValid = typeof claims.exp === 'number' && Number.isFinite(claims.exp) && claims.exp > nowSec;
+  const nonceValid = !expectedNonce || claims.nonce === expectedNonce;
+
+  if (!iss.startsWith('https://') || !audMatches || !expValid || !nonceValid) {
+    return Response.redirect(
+      `${origin}/workforce-journey?entra_error=INVALID_ID_TOKEN_CLAIMS`,
+      302
+    );
+  }
+
+  const oid = String(claims.oid || claims.sub || '');
   const email = String(
-    claims?.email || claims?.preferred_username || 'external.visitor@entra-ciam'
+    claims.email || claims.preferred_username || 'external.visitor@entra-ciam'
   );
-  const name = String(claims?.name || email.split('@')[0]);
+  const name = String(claims.name || email.split('@')[0]);
 
   if (!oid) {
     return Response.redirect(
@@ -100,21 +131,21 @@ export async function onRequestGet(context: {
   crypto.getRandomValues(ticketBytes);
   const ticket = Array.from(ticketBytes, (b) => b.toString(16).padStart(2, '0')).join('');
 
-  if (context.env.STATE_KV) {
-    await context.env.STATE_KV.put(
-      `lab1:entra-oidc:${ticket}`,
-      JSON.stringify({ oid, email, name, verified_at: new Date().toISOString() }),
-      { expirationTtl: 3600 }
-    );
-  }
-
-  const returnParams = new URLSearchParams({
-    entra_ticket: ticket,
-    oid,
-    email
-  });
-  return Response.redirect(
-    `${origin}/workforce-journey?${returnParams.toString()}`,
-    302
+  await context.env.STATE_KV.put(
+    `lab1:entra-oidc:${ticket}`,
+    JSON.stringify({ oid, email, name, verified_at: new Date().toISOString() }),
+    { expirationTtl: 3600 }
   );
+
+  const secureAttr = origin.startsWith('https://') ? '; Secure' : '';
+  const cookieHeader = `lab1_entra_ticket=${ticket}; Path=/; HttpOnly; SameSite=Lax; Max-Age=3600${secureAttr}`;
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: `${origin}/workforce-journey?entra_auth=1`,
+      'Set-Cookie': cookieHeader,
+      'Cache-Control': 'no-store'
+    }
+  });
 }

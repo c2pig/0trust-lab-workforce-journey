@@ -46,7 +46,13 @@ flowchart LR
   - `POST /api/workforce-journey/protected-call`
   - `POST /api/workforce-journey/logout`
   - `GET /api/workforce-journey/entra/login`
-  - `GET /api/workforce-journey/entra/callback`
+  - `GET /api/workforce-journey/entra/callback` (validates PKCE `state` in `STATE_KV`, verifies `id_token` claims `iss`/`aud`/`exp`/`nonce`, stores `lab1:entra-oidc:<ticket>`, and sets `HttpOnly; SameSite=Lax` cookie `lab1_entra_ticket` before redirecting to `/workforce-journey?entra_auth=1` with no PII/tickets in the URL)
+  - `GET /api/workforce-journey/entra/session` (resolves authenticated Entra External ID identity from `lab1_entra_ticket` `HttpOnly` cookie)
+- **API Security Controls**:
+  - `workforceJourneyCrypto.ts` fails closed in `ENVIRONMENT=production` if `LAB1_JWT_SECRET` is missing or `< 16` chars, and enforces `header.alg === 'HS256'` plus `payload.exp` expiration.
+  - `jit-decision.ts` requires a signed `Authorization: Bearer <approver_jwt>` with `Audit Approver` role and enforces self-approval prevention via verified `claims.email`.
+  - `logout.ts` requires a valid signed `Authorization: Bearer <jwt>` matching `sessionId`, verifies any body tokens, and clears `lab1_entra_ticket`.
+  - All 6 POST routes enforce a 64 KB JSON request body size cap (`413 PAYLOAD_TOO_LARGE`).
 
 ### 3. Firestore Native State (`kv_state`)
 - Document ID format: `workforce-journey:${encodeURIComponent(key)}` with fields `{ value, expireAt, updatedAt, labSlug }`.
@@ -57,7 +63,9 @@ flowchart LR
   - `lab1:pkce:<state>` — Entra OIDC PKCE state (`600s` TTL)
   - `lab1:entra-oidc:<ticket>` — Verified Entra OIDC session ticket (`3600s` TTL)
 
-### 4. Infrastructure & CI/CD (`infra/terraform/`, `.github/workflows/deploy.yml`)
+### 4. Infrastructure & CI/CD (`infra/terraform/`, `.github/workflows/ci.yml`, `.github/workflows/deploy.yml`)
+- **PR CI (`.github/workflows/ci.yml`)**: Runs `npx tsc --noEmit`, `npx tsc -p tsconfig.server.json --noEmit`, `npm test`, and `npm run build` on every `pull_request` to `main`.
+- **Serialized Deploy Pipeline (`.github/workflows/deploy.yml`)**: Runs `test` first, then `deploy-cloudrun` (`needs: test`), then `deploy-pages` (`needs: [test, deploy-cloudrun]`) so API revisions roll out before static SPAs.
 - **Remote Terraform State (`infra/terraform/backend.tf`)**: Declares `backend "gcs"` (`bucket = "0trust-dev-tfstate"`, `prefix = "labs/workforce-journey"`). Local `*.tfstate*` and `.terraform/` are gitignored; after one-time bucket provisioning (Uniform Bucket-Level Access, versioning enabled, `public_access_prevention = "enforced"`), operators migrate local state via `terraform init -migrate-state`.
 - **Cloudflare Pages (Static SPA)**: `managed-infrastructure//modules/cloudflare-pages-lab` (`enable_custom_domain = false`). `deploy.yml` `deploy-pages` job strips `functions/` and deploys `dist/` only.
 - **GCP Cloud Run API**: `managed-infrastructure//modules/cloud-run-lab` (`min_instance_count = 0`, `$0` idle cost, dedicated least-privilege runtime SA with per-secret `roles/secretmanager.secretAccessor` and `roles/datastore.user`). `deploy.yml` `deploy-cloudrun` job authenticates via GitHub Actions WIF OIDC, builds/pushes to Artifact Registry (`0trust-labs/workforce-journey:${GITHUB_SHA}`), and deploys to Cloud Run.

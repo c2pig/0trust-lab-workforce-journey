@@ -40,6 +40,7 @@ export interface WorkforceJourneyProvisionData {
   persona?: { id: string; name: string; email: string; department: string };
   roles?: string[];
   session_jwt?: string;
+  approver_jwt?: string;
   decoded_claims?: WorkforceJourneyDecodedJwt;
   scim_record?: WorkforceJourneyScimRecord;
   idp_mode?: string;
@@ -332,6 +333,20 @@ async function runBrowserFallback(
       iat: nowSec,
       exp: nowSec + 3600
     });
+    const approverSigned = await fallbackSignJwt({
+      iss: 'https://iam.0trust.dev',
+      sub: 'marcus-chen',
+      email: 'marcus.chen@acme-corp.io',
+      name: 'Marcus Chen',
+      department: 'Finance Management',
+      roles: ['Audit Approver'],
+      scope: 'pam:approve',
+      token_type: 'session',
+      jti: `apprv_${randomHex(6)}`,
+      sid: sessionId,
+      iat: nowSec,
+      exp: nowSec + 3600
+    });
     return {
       status: 200,
       data: {
@@ -339,6 +354,7 @@ async function runBrowserFallback(
         persona,
         roles,
         session_jwt: signed.token,
+        approver_jwt: approverSigned.token,
         decoded_claims: { header: signed.header, payload: signed.payload },
         scim_record: scim,
         idp_mode: 'edge-webcrypto',
@@ -617,6 +633,38 @@ async function runBrowserFallback(
   }
 
   if (path === '/api/workforce-journey/jit-decision') {
+    const approverToken = authHeader?.replace(/^Bearer\s+/i, '').trim();
+    if (!approverToken) {
+      return {
+        status: 401,
+        data: {
+          error: 'MISSING_APPROVER_TOKEN',
+          message: 'Authorization: Bearer <approver_jwt> header is required.'
+        }
+      };
+    }
+    const verifiedApprover = await fallbackVerifyJwt(approverToken);
+    if (!verifiedApprover.valid || !verifiedApprover.payload) {
+      return {
+        status: 401,
+        data: {
+          error: 'INVALID_APPROVER_TOKEN',
+          message: verifiedApprover.error || 'Approver token verification failed.'
+        }
+      };
+    }
+    const approverClaims = verifiedApprover.payload;
+    const approverRoles = Array.isArray(approverClaims.roles) ? (approverClaims.roles as string[]) : [];
+    if (!approverRoles.includes('Audit Approver')) {
+      return {
+        status: 403,
+        data: {
+          error: 'APPROVER_ROLE_REQUIRED',
+          message: 'Approver token must include the "Audit Approver" role.'
+        }
+      };
+    }
+
     const requestId = typeof body.request_id === 'string' ? body.request_id.trim() : '';
     if (!requestId) {
       return {
@@ -693,10 +741,11 @@ async function runBrowserFallback(
       };
     }
 
-    const approverInput = (body.approver || {}) as { id?: string; name?: string; email?: string };
-    const approverEmail = approverInput.email?.trim() || 'marcus.chen@acme-corp.io';
-    const approverName = approverInput.name?.trim() || 'Marcus Chen';
-    if (approverEmail.toLowerCase() === record.requester.email.toLowerCase()) {
+    const approverEmail = typeof approverClaims.email === 'string' ? approverClaims.email.trim() : '';
+    const approverName = typeof approverClaims.name === 'string' && approverClaims.name.trim()
+      ? approverClaims.name.trim()
+      : 'Audit Approver';
+    if (!approverEmail || approverEmail.toLowerCase() === record.requester.email.toLowerCase()) {
       return {
         status: 403,
         data: {
@@ -936,6 +985,26 @@ async function runBrowserFallback(
   }
 
   if (path === '/api/workforce-journey/logout') {
+    const bearerTok = authHeader?.replace(/^Bearer\s+/i, '').trim();
+    if (!bearerTok) {
+      return {
+        status: 401,
+        data: {
+          error: 'MISSING_SESSION_TOKEN',
+          message: 'Authorization: Bearer <jwt> header is required to trigger Universal Logout.'
+        }
+      };
+    }
+    const bearerVerified = await fallbackVerifyJwt(bearerTok);
+    if (!bearerVerified.valid) {
+      return {
+        status: 401,
+        data: {
+          error: 'INVALID_SESSION_TOKEN',
+          message: bearerVerified.error || 'Bearer token verification failed.'
+        }
+      };
+    }
     const dir = fallbackDirStore.get(sessionId);
     const revoked: string[] = [];
     let subjectEmail = 'alex.chen@acme-corp.io';
@@ -1150,6 +1219,7 @@ export interface DecideWorkforceJitInput {
   sessionId: string;
   requestId: string;
   decision: WorkforceJourneyJitDecisionAction;
+  approverJwt?: string;
   approver?: {
     id?: string;
     name?: string;
@@ -1166,6 +1236,7 @@ export async function decideWorkforceJitRequest(
     '/api/workforce-journey/jit-decision',
     {
       sessionId: input.sessionId,
+      bearerToken: input.approverJwt,
       body: {
         request_id: input.requestId,
         decision: input.decision,
