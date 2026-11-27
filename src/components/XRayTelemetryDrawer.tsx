@@ -160,8 +160,9 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: '#78350f',
-              color: '#fef3c7',
+              backgroundColor: '#e8f0fe',
+              color: '#1967d2',
+              border: '1px solid #d2e3fc',
               padding: '3px 9px',
               borderRadius: '5px',
               fontSize: '11px',
@@ -178,10 +179,11 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
           <span
             style={{
               fontSize: '11.5px',
-              backgroundColor: '#1e293b',
+              backgroundColor: '#ffffff',
               padding: '2px 8px',
               borderRadius: '4px',
-              color: '#cbd5e1',
+              border: '1px solid #dadce0',
+              color: '#3c4043',
               fontFamily: 'var(--font-mono)',
               whiteSpace: 'nowrap',
               flexShrink: 0
@@ -209,7 +211,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               </span>
               <code
                 style={{
-                  color: '#38bdf8',
+                  color: '#0550ae',
                   fontSize: '11.5px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -221,7 +223,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               </code>
               <span
                 style={{
-                  color: '#a7f3d0',
+                  color: '#137333',
                   fontSize: '11.5px',
                   fontFamily: 'var(--font-mono)',
                   fontVariantNumeric: 'tabular-nums',
@@ -236,7 +238,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
-                    color: '#fcd34d',
+                    color: '#b06000',
                     fontSize: '11px',
                     whiteSpace: 'nowrap'
                   }}
@@ -260,15 +262,15 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               alignItems: 'center',
               gap: '5px',
               fontSize: '11px',
-              color: '#94a3b8',
+              color: '#5f6368',
               whiteSpace: 'nowrap'
             }}
             title="Async OTLP/HTTP export via Cloudflare waitUntil() (0ms user delay)"
           >
-            <Radio size={12} color="#10b981" />
+            <Radio size={12} color="#1e8e3e" />
             <span>
               OTLP waitUntil:{' '}
-              <strong style={{ color: '#e2e8f0' }}>
+              <strong style={{ color: '#202124' }}>
                 {latestSpan?.otlp_export === 'configured' ? 'Grafana / New Relic' : 'In-Lab Sync'}
               </strong>
             </span>
@@ -283,9 +285,9 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '4px',
-              backgroundColor: '#0f172a',
-              color: '#38bdf8',
-              border: '1px solid #334155',
+              backgroundColor: '#ffffff',
+              color: '#1a73e8',
+              border: '1px solid #dadce0',
               borderRadius: '5px',
               padding: '4px 8px',
               fontSize: '11px',
@@ -306,9 +308,9 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
-                backgroundColor: '#1e293b',
-                color: '#cbd5e1',
-                border: '1px solid #334155',
+                backgroundColor: '#ffffff',
+                color: '#3c4043',
+                border: '1px solid #dadce0',
                 borderRadius: '5px',
                 padding: '4px 8px',
                 fontSize: '11px',
@@ -330,8 +332,8 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: '5px',
-              backgroundColor: '#f59e0b',
-              color: '#0f172a',
+              backgroundColor: '#1a73e8',
+              color: '#ffffff',
               border: 'none',
               borderRadius: '5px',
               padding: '4px 10px',
@@ -372,9 +374,9 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               <span>Security Audit Feed</span>
               <span
                 style={{
-                  backgroundColor: '#0f172a',
-                  color: '#cbd5e1',
-                  border: '1px solid #334155',
+                  backgroundColor: '#f1f3f4',
+                  color: '#3c4043',
+                  border: '1px solid #dadce0',
                   borderRadius: '999px',
                   padding: '0 6px',
                   fontSize: '10.5px',
@@ -400,9 +402,9 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
               <span>Live Decoded Proof</span>
               <span
                 style={{
-                  backgroundColor: '#0f172a',
-                  color: '#93c5fd',
-                  border: '1px solid #334155',
+                  backgroundColor: '#e8f0fe',
+                  color: '#1967d2',
+                  border: '1px solid #d2e3fc',
                   borderRadius: '999px',
                   padding: '0 6px',
                   fontSize: '10.5px',
@@ -424,12 +426,12 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
             {sortedSpans.length === 0 ? (
               <div
                 style={{
-                  backgroundColor: '#1e293b',
-                  border: '1px dashed #334155',
+                  backgroundColor: '#f8f9fa',
+                  border: '1px dashed #dadce0',
                   borderRadius: '8px',
                   padding: '16px',
                   fontSize: '12.5px',
-                  color: '#94a3b8'
+                  color: '#5f6368'
                 }}
               >
                 No API spans captured yet. Trigger an action in the workspace to inspect live W3C{' '}
@@ -480,7 +482,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                             <code
                               style={{
                                 fontSize: '11.5px',
-                                color: '#38bdf8',
+                                color: '#0550ae',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap'
@@ -492,7 +494,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                           <span
                             style={{
                               fontSize: '11px',
-                              color: '#a7f3d0',
+                              color: '#137333',
                               fontFamily: 'var(--font-mono)',
                               fontVariantNumeric: 'tabular-nums',
                               whiteSpace: 'nowrap',
@@ -506,7 +508,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                         <div
                           style={{
                             height: '4px',
-                            backgroundColor: '#1e293b',
+                            backgroundColor: '#e8eaed',
                             borderRadius: '999px',
                             overflow: 'hidden'
                           }}
@@ -515,7 +517,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                             style={{
                               width: `${barWidthPct}%`,
                               height: '100%',
-                              backgroundColor: span.status >= 400 ? '#f87171' : '#10b981'
+                              backgroundColor: span.status >= 400 ? '#d93025' : '#1e8e3e'
                             }}
                           />
                         </div>
@@ -528,7 +530,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                             gap: '8px',
                             flexWrap: 'wrap',
                             fontSize: '10.5px',
-                            color: '#94a3b8',
+                            color: '#5f6368',
                             fontFamily: 'var(--font-mono)'
                           }}
                         >
@@ -558,7 +560,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '3px',
-                                  color: '#fcd34d'
+                                  color: '#b06000'
                                 }}
                               >
                                 <EyeOff size={11} />
@@ -587,7 +589,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                       style={{
                         fontSize: '11px',
                         fontWeight: 700,
-                        color: '#94a3b8',
+                        color: '#5f6368',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em'
                       }}
@@ -604,7 +606,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                         background: 'none',
                         border: 'none',
                         padding: 0,
-                        color: '#fbbf24',
+                        color: '#1a73e8',
                         fontSize: '11px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -621,7 +623,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                       {JSON.stringify(formatSpanPayload(activeSpan), null, 2)}
                     </pre>
                   ) : (
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '12px', color: '#5f6368' }}>
                       Select an audit row to inspect its redacted telemetry payload.
                     </div>
                   )}
@@ -652,7 +654,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                     style={{
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#93c5fd',
+                      color: '#1967d2',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em'
                     }}
@@ -660,7 +662,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                     Decoded session_jwt (Header &amp; Claims)
                   </span>
                   {redactedSessionPreview && (
-                    <span style={{ fontSize: '10px', color: '#fcd34d', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '10px', color: '#b06000', whiteSpace: 'nowrap' }}>
                       Sig Redacted
                     </span>
                   )}
@@ -669,18 +671,18 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                   <code
                     style={{
                       fontSize: '10.5px',
-                      color: '#94a3b8',
+                      color: '#5f6368',
                       wordBreak: 'break-all',
-                      backgroundColor: '#020617',
+                      backgroundColor: '#f1f3f4',
                       padding: '4px 6px',
                       borderRadius: '4px',
-                      border: '1px solid #1e293b'
+                      border: '1px solid #dadce0'
                     }}
                   >
                     {redactedSessionPreview}
                   </code>
                 )}
-                <pre className="xray-proof-pre" style={{ color: '#93c5fd' }}>
+                <pre className="xray-proof-pre" style={{ color: '#1967d2' }}>
                   {JSON.stringify(
                     sessionClaims
                       ? { header: sessionClaims.header, payload: sessionClaims.payload }
@@ -705,7 +707,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                     style={{
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#6ee7b7',
+                      color: '#137333',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em'
                     }}
@@ -713,7 +715,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                     Decoded jit_jwt (Header &amp; Claims)
                   </span>
                   {redactedJitPreview && (
-                    <span style={{ fontSize: '10px', color: '#fcd34d', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '10px', color: '#b06000', whiteSpace: 'nowrap' }}>
                       Sig Redacted
                     </span>
                   )}
@@ -722,18 +724,18 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                   <code
                     style={{
                       fontSize: '10.5px',
-                      color: '#94a3b8',
+                      color: '#5f6368',
                       wordBreak: 'break-all',
-                      backgroundColor: '#020617',
+                      backgroundColor: '#f1f3f4',
                       padding: '4px 6px',
                       borderRadius: '4px',
-                      border: '1px solid #1e293b'
+                      border: '1px solid #dadce0'
                     }}
                   >
                     {redactedJitPreview}
                   </code>
                 )}
-                <pre className="xray-proof-pre" style={{ color: '#6ee7b7' }}>
+                <pre className="xray-proof-pre" style={{ color: '#137333' }}>
                   {JSON.stringify(
                     jitClaims
                       ? { header: jitClaims.header, payload: jitClaims.payload }
@@ -750,7 +752,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: '#cbd5e1',
+                    color: '#3c4043',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em'
                   }}
@@ -772,14 +774,14 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: '#fca5a5',
+                    color: '#c5221f',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em'
                   }}
                 >
                   OpenID CAEP session-revoked SET
                 </span>
-                <pre className="xray-proof-pre" style={{ color: '#fca5a5' }}>
+                <pre className="xray-proof-pre" style={{ color: '#c5221f' }}>
                   {JSON.stringify(
                     caepEvent || { info: 'No CAEP revocation event emitted yet' },
                     null,
@@ -794,7 +796,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: '#fcd34d',
+                    color: '#b06000',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em'
                   }}
@@ -819,7 +821,7 @@ export const XRayTelemetryDrawer: React.FC<XRayTelemetryDrawerProps> = ({
                     style={{
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#cbd5e1',
+                      color: '#3c4043',
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em'
                     }}
